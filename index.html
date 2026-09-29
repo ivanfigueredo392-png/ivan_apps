@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Prospeccion A2</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0f2d4a;--blue:#1a6fbf;--sky:#4da6e8;--mist:#e8f3fc;
+  --bg:#eef3f8;--card:#ffffff;--card2:#f5f8fc;
+  --line:#d8e6f2;--line2:#c4d8ea;
+  --ink:#0c1f2e;--slate:#5a7488;--mute:#8aa0b2;
+  --ok:#1e9e6b;--ok-bg:#e3f6ef;--warn:#c97b1a;--warn-bg:#fcf1de;
+  --err:#d8483f;--err-bg:#fbe7e5;--info:#1a6fbf;--info-bg:#e6f1fb;
+  --purple:#7f5fdd;--purple-bg:#efeafc;
+  --r:12px;--r2:16px;--rs:8px;--tap:#185fa5;
+}
+html[data-theme="dark"]{
+  --navy:#0a1824;--blue:#3b8fe0;--sky:#5aa6e8;--mist:#13283c;
+  --bg:#0b141d;--card:#13212e;--card2:#0f1a25;
+  --line:#21384c;--line2:#2c4a64;
+  --ink:#e6eef5;--slate:#9fb4c6;--mute:#6f879b;
+  --ok:#3fc28c;--ok-bg:#10312a;--warn:#e0a040;--warn-bg:#32260f;
+  --err:#ec6a60;--err-bg:#371917;--info:#3b8fe0;--info-bg:#0f2a44;
+  --purple:#9a82e8;--purple-bg:#1d1733;
+}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased;padding-bottom:calc(82px + env(safe-area-inset-bottom,0px));min-height:100vh}
+input,select,textarea,button{font-family:inherit;font-size:14px;outline:none;color:var(--ink)}
+button{cursor:pointer}
+a{color:var(--blue)}
+.hdr{position:sticky;top:0;z-index:50;background:var(--navy);padding:9px 14px 10px}
+.hdr-top{display:flex;align-items:center;gap:10px;max-width:520px;margin:0 auto}
+.logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--sky),var(--blue));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0}
+.hdr-title{color:#fff;font-weight:700;font-size:16px;line-height:1.1}
+.hdr-sub{color:#9fc2e0;font-size:11px}
+.hdr-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:50%;background:#e0a040}
+.dot.on{background:#3fc28c}
+.icobtn{width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
+.brands{display:flex;flex-direction:column;gap:5px}
+.brand{display:flex;align-items:center;gap:8px}
+.brand .blg{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px;flex-shrink:0}
+.brand .blg.a2{background:linear-gradient(135deg,#4da6e8,#1a6fbf)}
+.brand .blg.of{background:linear-gradient(135deg,#5f7488,#2c4a64)}
+.brand span{color:#fff;font-weight:600;font-size:12.5px;line-height:1.1}
+.vendchip{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:0}
+.tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:60;width:100%;max-width:520px;display:flex;background:var(--card);border-top:1px solid var(--line);border-left:1px solid var(--line);border-right:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tab{flex:1;border:none;background:none;padding:7px 2px 6px;color:var(--mute);display:flex;flex-direction:column;align-items:center;gap:2px}
+.tab .ic{font-size:21px;line-height:1}
+.tab .lb{font-size:10.5px;font-weight:600}
+.tab.active{color:var(--tap)}
+.view{display:none;padding:14px 14px 4px;max-width:520px;margin:0 auto}
+.view.active{display:block}
+.h2{font-size:13px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;margin:2px 0 10px}
+.h2 .right{float:right;text-transform:none;letter-spacing:0;font-size:12px;color:var(--blue);font-weight:600;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 13px;margin-bottom:10px}
+.card.tap{cursor:pointer}
+.card.tap:active{transform:scale(.99)}
+.row-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ttl{font-weight:700;font-size:15px}
+.sub{color:var(--slate);font-size:12.5px;margin-top:3px;line-height:1.4}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metric{background:var(--card2);border:1px solid var(--line);border-radius:var(--rs);padding:11px 12px}
+.metric .l{font-size:12px;color:var(--slate)}
+.metric .n{font-size:24px;font-weight:700;margin-top:1px}
+.tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;white-space:nowrap}
+.t-ok{background:var(--ok-bg);color:var(--ok)}
+.t-warn{background:var(--warn-bg);color:var(--warn)}
+.t-err{background:var(--err-bg);color:var(--err)}
+.t-info{background:var(--info-bg);color:var(--info)}
+.t-mute{background:var(--card2);color:var(--slate);border:1px solid var(--line)}
+.bar{height:8px;border-radius:99px;background:var(--card2);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--blue);border-radius:99px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:42px;padding:0 16px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-weight:700;font-size:14px}
+.btn.block{width:100%}
+.btn.ghost{background:transparent;border:1px solid var(--line2);color:var(--ink)}
+.btn.sm{height:34px;padding:0 12px;font-size:13px;border-radius:8px}
+.fab{position:fixed;left:50%;margin-left:186px;bottom:82px;z-index:55;width:54px;height:54px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:26px;box-shadow:0 4px 16px rgba(26,111,191,.4);display:flex;align-items:center;justify-content:center}
+@media(max-width:520px){.fab{left:auto;right:16px;margin-left:0}}
+.search{width:100%;height:40px;border:1px solid var(--line2);border-radius:10px;background:var(--card);padding:0 12px;margin-bottom:10px}
+.fchips{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px;-webkit-overflow-scrolling:touch}
+.fchip{flex:none;font-size:12px;font-weight:600;padding:6px 12px;border-radius:99px;border:1px solid var(--line2);background:var(--card);color:var(--slate)}
+.fchip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.stg{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.stg:last-child{border:none}
+.stg .ic{width:26px;text-align:center;font-size:17px}
+.stg .nm{flex:1;font-size:14px}
+.stg .ct{font-size:12px;font-weight:700;background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:2px 10px;min-width:26px;text-align:center}
+#map{height:60vh;min-height:380px;max-height:720px;border-radius:var(--r);border:1px solid var(--line);overflow:hidden;background:#1b2b3a}
+.leaflet-container{background:#1b2b3a}
+.empty{text-align:center;color:var(--mute);padding:30px 14px;font-size:13px}
+.empty .mi{font-size:34px;display:block;margin-bottom:8px;opacity:.6}
+.ovl{position:fixed;inset:0;z-index:100;background:rgba(8,16,24,.5);display:none;align-items:flex-end;justify-content:center}
+.ovl.open{display:flex}
+.sheet{background:var(--bg);width:100%;max-width:520px;max-height:92vh;border-radius:18px 18px 0 0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet-hd{position:sticky;top:0;background:var(--bg);padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);z-index:2}
+.sheet-hd .ttl{flex:1}
+.sheet-bd{padding:14px 16px 20px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--slate);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;height:42px;border:1px solid var(--line2);border-radius:10px;background:var(--card);padding:0 12px}
+.field textarea{height:auto;min-height:64px;padding:10px 12px;resize:vertical}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.closeb{width:34px;height:34px;border-radius:9px;border:none;background:var(--card2);color:var(--ink);font-size:20px}
+.note{font-size:12px;color:var(--slate);background:var(--info-bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:12px;line-height:1.45}
+.divh{font-size:12px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 8px;border-top:1px solid var(--line);padding-top:14px}
+.inter{font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--line);display:flex;gap:8px}
+.inter .ic{width:20px;text-align:center;color:var(--blue)}
+.integgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.integ{display:flex;align-items:center;gap:7px;padding:8px 9px;border:1px solid var(--line2);border-radius:9px;background:var(--card);font-size:13px;font-weight:600}
+.integ input{width:auto;height:auto;margin:0}
+.closeb.sm{width:26px;height:26px;font-size:16px;border-radius:7px;flex:none}
+.mini-lbl{font-size:11px;font-weight:700;color:var(--slate);letter-spacing:.03em}
+.itin-emp{border:1px solid var(--line2);border-radius:12px;padding:12px;margin-bottom:11px;background:var(--card2)}
+.itin-emp>input,.itin-emp>textarea,.itin-emp>.f2>input,.itin-emp>.f2>select{width:100%;height:38px;border:1px solid var(--line2);border-radius:9px;background:var(--card);padding:0 11px;font-size:13px;color:var(--ink);margin-top:8px;font-family:inherit}
+.itin-emp>textarea{min-height:44px;padding:9px 11px;height:auto}
+.itin-cont{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px;background:var(--card)}
+.itin-cont input{width:100%;height:36px;border:1px solid var(--line2);border-radius:8px;background:var(--card2);padding:0 10px;font-size:12.5px;color:var(--ink);margin-top:7px;font-family:inherit}
+.itin-cont .f2{margin-top:0}
+.gastorow{display:flex;gap:7px;align-items:center;margin-bottom:7px}
+.gastorow select{width:108px;height:36px;border:1px solid var(--line2);border-radius:8px;background:var(--card);font-size:12px;padding:0 6px;flex:none;font-family:inherit}
+.gastorow input[type="number"]{width:82px;height:36px;border:1px solid var(--line2);border-radius:8px;background:var(--card);padding:0 8px;font-size:12.5px;flex:none;text-align:right;font-family:inherit}
+.gastorow input:not([type="number"]){flex:1;height:36px;border:1px solid var(--line2);border-radius:8px;background:var(--card);padding:0 10px;font-size:12.5px;min-width:0;font-family:inherit}
+.vpin{width:24px;height:24px;background:#1a6fbf;border:2px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 5px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
+.vpin b{transform:rotate(45deg);color:#fff;font-size:11px;font-weight:700}
+.vpin.big{width:32px;height:32px}
+.vpin.big b{font-size:13px}
+@media print{ .hdr,.tabbar,.fab,.no-print,.view{display:none!important} body{padding:0;background:#fff} #printArea{display:block!important} }
+@page{size:A4;margin:14mm}
+#printArea{display:none}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-top">
+    <div class="brands">
+      <div class="brand"><div class="blg a2">A2</div><span>Grupo A2 Rosario</span></div>
+      <div class="brand"><div class="blg of">OA</div><span>Office Amoblamientos SRL</span></div>
+    </div>
+    <div class="hdr-actions">
+      <span class="dot" id="connDot" title="Conexion"></span>
+      <button class="icobtn" id="themeBtn" aria-label="Tema" onclick="toggleTheme()">&#9681;</button>
+    </div>
+  </div>
+</header>
+
+<section class="view active" id="v-inicio">
+  <div class="h2">Dashboard ejecutivo</div>
+  <div class="mgrid" style="margin-bottom:10px">
+    <div class="metric"><div class="l">Contactos</div><div class="n" id="kpiContactos">0</div></div>
+    <div class="metric"><div class="l">Viajes</div><div class="n" id="kpiViajes">0</div></div>
+    <div class="metric"><div class="l">Oport. activas</div><div class="n" id="kpiActivas">0</div></div>
+    <div class="metric"><div class="l">Ganados</div><div class="n" id="kpiGanados">0</div></div>
+  </div>
+  <div class="card">
+    <div class="row-between"><div class="ttl" style="font-size:14px">Conversion general</div><div style="font-weight:700;color:var(--blue)" id="convPct">0%</div></div>
+    <div class="bar" style="margin-top:9px"><i id="convBar" style="width:0%"></i></div>
+    <div class="sub" id="convSub">presupuestos: 0 - ganados: 0</div>
+  </div>
+  <div class="card">
+    <div class="row-between"><div class="ttl" style="font-size:14px">Nuevos este mes</div><div style="font-weight:700;color:var(--blue)" id="kpiMes">0</div></div>
+  </div>
+  <div class="h2" style="margin-top:6px">Mapa historico de viajes</div>
+  <div id="map"></div>
+  <div class="sub" style="margin-bottom:14px">Cada pin marca una localidad visitada. El numero son los viajes realizados ahi. Toca un pin para ver fechas y contactos.</div>
+</section>
+
+<section class="view" id="v-viajes">
+  <div class="h2">Viajes de prospeccion</div>
+  <div class="fchips" id="viajeFiltros"></div>
+  <div id="listaViajes"></div>
+</section>
+
+<section class="view" id="v-contactos">
+  <div class="h2">Base general de contactos</div>
+  <input class="search" id="buscador" placeholder="Buscar empresa, contacto, CUIT..." oninput="renderContactos()">
+  <div class="fchips" id="contactoFiltros"></div>
+  <div id="listaContactos"></div>
+</section>
+
+<section class="view" id="v-pipeline">
+  <div class="h2">Seguimiento comercial</div>
+  <div class="card" id="stages"></div>
+  <div class="fchips" id="pipeFiltros"></div>
+  <div id="listaPipe"></div>
+</section>
+
+<section class="view" id="v-reportes">
+  <div class="h2">Reporte de viaje <span class="right" onclick="printReporte()">Imprimir / PDF</span></div>
+  <div class="field"><select id="repViaje" onchange="renderReporte()"></select></div>
+  <div id="reporteBody"></div>
+  <div class="h2" style="margin-top:6px">Exportar</div>
+  <button class="btn ghost block" onclick="exportExcel()" style="margin-bottom:10px">&#8681; Exportar todo a Excel</button>
+  <div class="h2" style="margin-top:6px">Enviar a Seguimiento (ventas)</div>
+  <button class="btn block" onclick="exportProspectosSeguimiento()" style="margin-bottom:8px">&#8690; Exportar prospectos para Seguimiento</button>
+  <div class="sub" style="margin-bottom:16px">Genera un Excel con los prospectos (keyeado por CUIT) para importarlo en grupo-a2-rosario.ventas1.workers.dev y darles tratamiento en la pestana Seguimiento.</div>
+  <div class="h2" style="margin-top:6px">Copia de seguridad</div>
+  <button class="btn block" onclick="backupJSON()" style="margin-bottom:10px">&#128190; Descargar backup (JSON)</button>
+  <button class="btn ghost block" onclick="document.getElementById('fileRestore').click()" style="margin-bottom:8px">&#8631; Restaurar desde backup</button>
+  <input type="file" id="fileRestore" accept="application/json,.json" style="display:none" onchange="restoreJSON(this)">
+  <div class="sub" style="margin-bottom:16px">El JSON guarda viajes, contactos y ciudades tal cual estan, y se puede volver a cargar. El Excel es solo para leer.</div>
+</section>
+
+<section class="view" id="v-config">
+  <div class="h2">Configuracion</div>
+  <div class="sub" style="margin-bottom:12px">Todo lo que cambies aca se guarda para todo el equipo.</div>
+  <div id="configBody"></div>
+</section>
+
+<button class="fab" id="fab" onclick="fabAction()">+</button>
+
+<nav class="tabbar">
+  <button class="tab active" data-v="inicio" onclick="nav('inicio')"><span class="ic">&#9737;</span><span class="lb">Inicio</span></button>
+  <button class="tab" data-v="viajes" onclick="nav('viajes')"><span class="ic">&#9906;</span><span class="lb">Viajes</span></button>
+  <button class="tab" data-v="contactos" onclick="nav('contactos')"><span class="ic">&#9783;</span><span class="lb">Contactos</span></button>
+  <button class="tab" data-v="pipeline" onclick="nav('pipeline')"><span class="ic">&#9647;</span><span class="lb">Pipeline</span></button>
+  <button class="tab" data-v="reportes" onclick="nav('reportes')"><span class="ic">&#9974;</span><span class="lb">Reportes</span></button>
+  <button class="tab" data-v="config" onclick="nav('config')"><span class="ic">&#9881;</span><span class="lb">Config</span></button>
+</nav>
+
+<div class="ovl" id="ovl"><div class="sheet"><div class="sheet-hd"><div class="ttl" id="sheetTitle">-</div><button class="closeb" onclick="closeSheet()">&times;</button></div><div class="sheet-bd" id="sheetBody"></div></div></div>
+
+<div id="printArea"></div>
+
+<script>
+/* =======================================================================
+   CONFIG  ---  mismo proyecto Firebase, path NUEVO. No toca tus otras apps.
+   ======================================================================= */
+var firebaseConfig = {
+  apiKey: "AIzaSyBe5XYEcquhv9lRAz1Ie34syeiwPpr5nD8",
+  authDomain: "presupuesto-familiar-f758d.firebaseapp.com",
+  databaseURL: "https://presupuesto-familiar-f758d-default-rtdb.firebaseio.com",
+  projectId: "presupuesto-familiar-f758d",
+  storageBucket: "presupuesto-familiar-f758d.appspot.com"
+};
+var DB_PATH = "prospeccion_a2";
+
+var VENDEDORES = [
+  {id:"ivan", n:"Ivan", c:"#1a6fbf"},
+  {id:"rocio", n:"Rocio", c:"#d4537e"},
+  {id:"gaston", n:"Gaston", c:"#185fa5"},
+  {id:"nacha", n:"Nacha", c:"#7f5fdd"},
+  {id:"vitto", n:"Vitto", c:"#1d9e75"},
+  {id:"facundo", n:"Facundo", c:"#ba7517"},
+  {id:"nico", n:"Nico", c:"#d85a30"},
+  {id:"pablo", n:"Pablo", c:"#5f5e5a"},
+  {id:"deby", n:"Deby", c:"#0f6e56"}
+];
+/* La empresa define contra que path de ventas se cruza en el futuro.
+   El cruce se hara por N de presupuesto, que es el unico ID compartido. */
+var EMPRESAS = [
+  {id:"a2", n:"Grupo A2", full:"Grupo A2 Rosario", sub:"Mobiliario corporativo de oficina", ventasPath:"seguimiento_a2/presupuestos"},
+  {id:"office", n:"Office", full:"Office Amoblamientos S.R.L.", sub:"Mobiliario corporativo de oficina", ventasPath:"seguimiento_office"}
+];
+var ETAPAS = ["Prospecto","Contactado","Reunion realizada","Presupuesto enviado","Negociacion","Cliente ganado","Cliente perdido"];
+var ETAPA_ICO = {"Prospecto":"&#9675;","Contactado":"&#9742;","Reunion realizada":"&#9783;","Presupuesto enviado":"&#9993;","Negociacion":"&#8644;","Cliente ganado":"&#9733;","Cliente perdido":"&#9747;"};
+var ACTIVAS = ["Contactado","Reunion realizada","Presupuesto enviado","Negociacion"];
+var POTENCIAL = ["Alto","Medio","Bajo"];
+var PROVINCIAS = ["Buenos Aires","CABA","Catamarca","Chaco","Chubut","Cordoba","Corrientes","Entre Rios","Formosa","Jujuy","La Pampa","La Rioja","Mendoza","Misiones","Neuquen","Rio Negro","Salta","San Juan","San Luis","Santa Cruz","Santa Fe","Santiago del Estero","Tierra del Fuego","Tucuman"];
+var KM_RATE_DEFAULT = 700;
+var LOCALIDADES = {
+  "Rosario":[-32.946,-60.639],"San Nicolas":[-33.336,-60.211],"Villa Constitucion":[-33.227,-60.328],
+  "Ramallo":[-33.485,-60.001],"Armstrong":[-32.781,-61.601],"Las Parejas":[-32.683,-61.524],
+  "Rafaela":[-31.252,-61.491],"Canada de Gomez":[-32.815,-61.394],"Casilda":[-33.045,-61.168],
+  "Venado Tuerto":[-33.745,-61.969],"Santa Fe":[-31.633,-60.700],"Pergamino":[-33.889,-60.575],
+  "Cordoba":[-31.420,-64.188],"Buenos Aires":[-34.603,-58.381],
+  "Las Rosas":[-32.479,-61.578],"Firmat":[-33.456,-61.485],"Carcarana":[-32.857,-61.155],
+  "San Lorenzo":[-32.752,-60.736],"Roldan":[-32.898,-60.901],"Funes":[-32.918,-60.810],
+  "Totoras":[-32.583,-61.170],"El Trebol":[-32.199,-61.706]
+};
+
+/* =================== ESTADO =================== */
+var DB = {viajes:{}, contactos:{}, localidades:{}, config:{}};
+var CAT_GASTO_DEFAULT = ["Comida","Bebida","Combustible","Peaje","Alojamiento","Otro"];
+function catGasto(){ var c=(DB.config&&DB.config.categorias_gasto); return (c&&c.length)?c:CAT_GASTO_DEFAULT; }
+function cfgKmRate(){ var r=DB.config&&parseFloat(DB.config.km_rate); return r||KMRATE; }
+function vendList(){ var c=DB.config&&DB.config.vendedores; return (c&&c.length)?c:VENDEDORES; }
+function empList(){ var c=DB.config&&DB.config.empresas; return (c&&c.length)?c:EMPRESAS; }
+function etapaList(){ var c=DB.config&&DB.config.etapas; return (c&&c.length)?c:ETAPAS; }
+function potList(){ var c=DB.config&&DB.config.potencial; return (c&&c.length)?c:POTENCIAL; }
+var _tmpItin = [];
+var ME = localStorage.getItem("pa2_vend") || "ivan";
+var EMP = localStorage.getItem("pa2_emp") || "a2";
+var KMRATE = parseFloat(localStorage.getItem("pa2_kmrate")) || KM_RATE_DEFAULT;
+var CURRENT = "inicio";
+var fbRef = null, leafMap = null, markers = [];
+var fViaje = {estado:"todos"};
+var fCont = {pot:"todos"};
+var fPipe = "todas";
+
+/* =================== UTILS =================== */
+function $(id){return document.getElementById(id);}
+function esc(s){s=(s==null?"":""+s);return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function vend(id){var L=vendList();for(var i=0;i<L.length;i++){if(L[i].id===id)return L[i];}return {id:id,n:id,c:"#5a7488"};}
+function empObj(id){var L=empList();for(var i=0;i<L.length;i++){if(L[i].id===id)return L[i];}return L[0];}
+function empName(id){return empObj(id).n;}
+function money(n){n=Math.round(n||0);return "$"+n.toLocaleString("es-AR");}
+function vchip(id){var v=vend(id);return '<span class="vendchip" style="background:'+v.c+'"></span>';}
+function todayISO(){return new Date().toISOString().slice(0,10);}
+function fmtDate(s){if(!s)return "-";var p=s.slice(0,10).split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:s;}
+function thisMonth(){return new Date().toISOString().slice(0,7);}
+function arr(obj){var a=[];for(var k in obj){if(obj.hasOwnProperty(k)){var o=obj[k];o._id=k;a.push(o);}}return a;}
+function provOpts(sel){return '<option value="">-</option>'+PROVINCIAS.map(function(p){return '<option'+(p===sel?" selected":"")+'>'+p+'</option>';}).join("");}
+function integNames(ids){ids=ids||[];return ids.map(function(id){return vend(id).n;}).join(", ");}
+
+/* =================== FIREBASE =================== */
+function initFirebase(){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    fbRef = firebase.database().ref(DB_PATH);
+    firebase.auth().signInAnonymously().then(function(){
+      fbRef.on("value", function(snap){
+        var d = snap.val() || {};
+        DB.viajes = d.viajes || {};
+        DB.contactos = d.contactos || {};
+        DB.localidades = d.localidades || {};
+        DB.config = d.config || {};
+        $("connDot").classList.add("on");
+        renderAll();
+      });
+    }).catch(function(e){ console.error("Auth error", e); $("connDot").classList.remove("on"); renderAll(); });
+  }catch(e){ console.error("Firebase init error", e); renderAll(); }
+}
+function saveLocalidad(nombre, lat, lng, prov){
+  var id=uid(); var o={nombre:nombre, lat:lat, lng:lng, provincia:prov||"", ts:new Date().toISOString()};
+  if(fbRef)fbRef.child("localidades/"+id).set(o);
+  DB.localidades[id]=o; return o;
+}
+function delLocalidad(id){ if(fbRef)fbRef.child("localidades/"+id).remove(); delete DB.localidades[id]; renderAll(); }
+function saveViaje(v){ if(!v._id)v._id=uid(); var id=v._id; var c=JSON.parse(JSON.stringify(v)); delete c._id; if(fbRef)fbRef.child("viajes/"+id).set(c); DB.viajes[id]=c; renderAll(); }
+function delViaje(id){ if(fbRef)fbRef.child("viajes/"+id).remove(); delete DB.viajes[id]; renderAll(); }
+function saveContacto(c){ if(!c._id)c._id=uid(); var id=c._id; var o=JSON.parse(JSON.stringify(c)); delete o._id; if(fbRef)fbRef.child("contactos/"+id).set(o); DB.contactos[id]=o; renderAll(); }
+function delContacto(id){ if(fbRef)fbRef.child("contactos/"+id).remove(); delete DB.contactos[id]; renderAll(); }
+
+/* =================== NAV =================== */
+function nav(v){
+  CURRENT=v;
+  var vs=document.querySelectorAll(".view");
+  for(var i=0;i<vs.length;i++)vs[i].classList.remove("active");
+  $("v-"+v).classList.add("active");
+  var ts=document.querySelectorAll(".tab");
+  for(var j=0;j<ts.length;j++)ts[j].classList.toggle("active", ts[j].getAttribute("data-v")===v);
+  $("fab").style.display = (v==="viajes"||v==="contactos") ? "flex" : "none";
+  if(v==="inicio"){ setTimeout(function(){ if(leafMap)leafMap.invalidateSize(); refreshMap(); },150); }
+  if(v==="config"){ renderConfig(); }
+}
+function saveCfg(){ if(fbRef)fbRef.child("config").set(DB.config||{}); }
+function fabAction(){ if(CURRENT==="viajes")openViaje(null); else if(CURRENT==="contactos")openContacto(null); }
+function toggleTheme(){
+  var t=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";
+  document.documentElement.setAttribute("data-theme",t); localStorage.setItem("pa2_theme",t);
+  if(leafMap)setTimeout(function(){leafMap.invalidateSize();},100);
+}
+
+/* =================== RENDER MASTER =================== */
+function renderAll(){ renderDash(); renderViajes(); renderContactos(); renderPipeline(); fillRepSelect(); renderReporte(); }
+/* Integracion completa: una sola base con las dos empresas juntas */
+function contactosEmp(){ return arr(DB.contactos); }
+function viajesEmp(){ return arr(DB.viajes); }
+
+/* =================== DASHBOARD + MAPA =================== */
+function renderDash(){
+  var cs=contactosEmp(), vs=viajesEmp();
+  var activas=cs.filter(function(c){return ACTIVAS.indexOf(c.etapa)>=0;}).length;
+  var ganados=cs.filter(function(c){return c.etapa==="Cliente ganado";}).length;
+  var pptos=cs.filter(function(c){return c.n_presupuesto && (""+c.n_presupuesto).trim();}).length;
+  $("kpiContactos").textContent=cs.length;
+  $("kpiViajes").textContent=vs.length;
+  $("kpiActivas").textContent=activas;
+  $("kpiGanados").textContent=ganados;
+  var conv = pptos>0 ? Math.round(ganados/pptos*100) : 0;
+  $("convPct").textContent=conv+"%"; $("convBar").style.width=conv+"%";
+  $("convSub").textContent="presupuestos: "+pptos+" - ganados: "+ganados;
+  var mes=thisMonth();
+  $("kpiMes").textContent=cs.filter(function(c){return (c.creado||(c.ts||"").slice(0,10)).slice(0,7)===mes;}).length;
+  refreshMap();
+}
+function ensureMap(){
+  if(leafMap)return;
+  leafMap=L.map("map",{zoomControl:false,attributionControl:false}).setView([-31.6,-61.0],6);
+  // Tiles oscuras de Esri: sin API key, funcionan desde archivo local. Si fallan, no muestran cartel: queda el fondo oscuro con los pines.
+  var blank="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+  L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",{maxZoom:16,errorTileUrl:blank,attribution:"Esri"}).addTo(leafMap);
+  L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",{maxZoom:16,errorTileUrl:blank}).addTo(leafMap);
+}
+function pinIcon(n, big){
+  var s = big?32:24;
+  return L.divIcon({className:"", html:'<div class="vpin'+(big?" big":"")+'"><b>'+n+'</b></div>', iconSize:[s,s], iconAnchor:[s/2,s], popupAnchor:[0,-s]});
+}
+function refreshMap(){
+  ensureMap();
+  for(var i=0;i<markers.length;i++)leafMap.removeLayer(markers[i]);
+  markers=[];
+  var vs=viajesEmp(), cs=contactosEmp();
+  var byCity={};
+  for(var j=0;j<vs.length;j++){ var v=vs[j]; var ciudades=viajeCiudades(v); for(var q=0;q<ciudades.length;q++){ var cc=ciudades[q]; if(!cc)continue; if(!byCity[cc])byCity[cc]={viajes:[]}; if(byCity[cc].viajes.indexOf(v)<0)byCity[cc].viajes.push(v); } }
+  var bounds=[];
+  for(var city in byCity){
+    if(!byCity.hasOwnProperty(city))continue;
+    var loc=allLocs()[city]; if(!loc)continue;
+    var grupo=byCity[city].viajes, nV=grupo.length;
+    var nC=cs.filter(function(c){return c.ciudad===city;}).length;
+    var fechas=grupo.map(function(v){return fmtDate(v.fecha_inicio);}).sort().join(", ");
+    var m=L.marker(loc,{icon:pinIcon(nV, nV>=3)}).addTo(leafMap);
+    m.bindPopup('<div style="font-family:Plus Jakarta Sans"><b>'+esc(city)+'</b><br>'+nV+' viaje(s) - '+nC+' contactos<br><span style="color:#5a7488;font-size:11px">'+esc(fechas)+'</span></div>');
+    markers.push(m); bounds.push(loc);
+  }
+  if(bounds.length)leafMap.fitBounds(bounds,{padding:[46,46],maxZoom:7});
+  else leafMap.setView([-31.6,-61.0],6);
+}
+
+/* =================== VIAJES =================== */
+function viajeViatico(v){ var km=parseFloat(v.km)||0; var rate=parseFloat(v.km_rate)||KMRATE; var amort=km*rate; var gastos=(v.gastos||[]).reduce(function(s,g){return s+(parseFloat(g.monto)||0);},0); return {amort:amort,gastos:gastos,total:amort+gastos}; }
+/* Numeracion automatica y obligatoria: Viaje 1, 2, 3... por orden de creacion */
+function nextViajeNumero(){ var mx=0; for(var id in DB.viajes){ var n=parseInt(DB.viajes[id].numero,10); if(n>mx)mx=n; } return mx+1; }
+function viajeNumero(v){ return v && v.numero ? v.numero : "-"; }
+/* Itinerario del viaje: cada empresa visitada, con sus contactos generados */
+function itinContactosCount(v){ var n=0; (v.itinerario||[]).forEach(function(e){ n+=(e.contactos||[]).length; }); return n; }
+function estadoTag(e){ if(e==="En curso")return '<span class="tag t-warn">En curso</span>'; if(e==="Finalizado")return '<span class="tag t-mute">Finalizado</span>'; return '<span class="tag t-info">Planificado</span>'; }
+function viajeCiudades(v){ var a=[]; if(v.origen)a.push(v.origen); (v.destinos||[]).forEach(function(d){if(d)a.push(d);}); if(!a.length&&v.ciudad)a.push(v.ciudad); return a; }
+function viajeTitulo(v){ var d=(v.destinos||[]).filter(function(x){return x;}); if(d.length)return d.join(" - "); return v.origen||v.ciudad||"Viaje"; }
+function viajeRuta(v){ return viajeCiudades(v).join("  >  "); }
+/* Localidades = las fijas + las que carga el equipo (guardadas en Firebase) */
+function allLocs(){
+  var o={}; for(var k in LOCALIDADES){if(LOCALIDADES.hasOwnProperty(k))o[k]=LOCALIDADES[k];}
+  for(var id in DB.localidades){ if(!DB.localidades.hasOwnProperty(id))continue; var d=DB.localidades[id];
+    if(d && d.nombre && d.lat!=null && d.lng!=null) o[d.nombre]=[parseFloat(d.lat),parseFloat(d.lng)]; }
+  return o;
+}
+function locNames(){ return Object.keys(allLocs()).sort(); }
+/* Alta de ciudad nueva. Busca las coordenadas sola; si no las encuentra, las pedis a mano. */
+function nuevaCiudad(cb){
+  var nombre=prompt("Nombre de la ciudad o localidad:"); if(nombre===null)return;
+  nombre=nombre.replace(/[.#$\[\]\/]/g,"").trim();
+  if(!nombre){alert("Nombre vacio.");return;}
+  if(allLocs()[nombre]){alert("Esa ciudad ya esta en la lista.");if(cb)cb(nombre);return;}
+  var prov=prompt("Provincia (opcional):","Santa Fe")||"";
+  function guardar(lat,lng){
+    if(isNaN(lat)||isNaN(lng)){alert("Coordenadas invalidas. La ciudad no se guardo.");return;}
+    saveLocalidad(nombre,lat,lng,prov);
+    renderAll(); if(cb)cb(nombre);
+  }
+  function manual(){
+    var la=prompt("Latitud (ej: -32.946). Se saca de Google Maps tocando el lugar:");
+    if(la===null)return;
+    var lo=prompt("Longitud (ej: -60.639):"); if(lo===null)return;
+    guardar(parseFloat((""+la).replace(",",".")), parseFloat((""+lo).replace(",",".")));
+  }
+  var q=encodeURIComponent(nombre+", "+(prov||"")+", Argentina");
+  try{
+    fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+q)
+      .then(function(r){return r.json();})
+      .then(function(js){
+        if(js && js.length && js[0].lat){
+          var lat=parseFloat(js[0].lat), lng=parseFloat(js[0].lon);
+          if(confirm("Encontre: "+(js[0].display_name||nombre)+"\n\nLat "+lat.toFixed(4)+" / Lng "+lng.toFixed(4)+"\n\nUsar estas coordenadas?")) guardar(lat,lng);
+          else manual();
+        } else manual();
+      }).catch(function(){ manual(); });
+  }catch(e){ manual(); }
+}
+/* Manejo del selector cuando se elige "+ Agregar otra ciudad" */
+function onCitySel(sel, kind, idx){
+  if(sel.value!=="__nueva__"){ if(kind==="dest"){_tmpDest[idx]=sel.value;} previewRuta(); return; }
+  sel.value = (kind==="dest" ? (_tmpDest[idx]||"") : (sel.getAttribute("data-prev")||""));
+  nuevaCiudad(function(nombre){
+    if(kind==="dest"){ _tmpDest[idx]=nombre; renderDestinos(); }
+    else { var o=$("vorigen"); if(o){ o.innerHTML=locOptions(nombre,"-"); o.value=nombre; } }
+    previewRuta();
+  });
+}
+function esPropia(nombre){ for(var id in DB.localidades){ if(DB.localidades[id] && DB.localidades[id].nombre===nombre) return id; } return null; }
+function locOptions(val,ph){
+  return '<option value="">'+(ph||"-")+'</option>'
+    +locNames().map(function(l){return '<option'+(l===val?" selected":"")+'>'+esc(l)+'</option>';}).join("")
+    +'<option value="__nueva__">+ Agregar otra ciudad...</option>';
+}
+/* SVG esquematico geo-posicionado del recorrido. light=true para fondo claro de impresion */
+function recorridoSVG(v, W, H){
+  W=W||340; H=H||190;
+  var cities=viajeCiudades(v), pts=[];
+  var LOCS=allLocs();
+  for(var i=0;i<cities.length;i++){ var lc=LOCS[cities[i]]; if(lc)pts.push({name:cities[i],lat:lc[0],lng:lc[1]}); }
+  if(pts.length<1) return '<div style="padding:18px;text-align:center;color:#8aa0b2;font-size:12px">Agrega destinos con ubicacion conocida para ver el recorrido.</div>';
+  var lats=pts.map(function(p){return p.lat;}), lngs=pts.map(function(p){return p.lng;});
+  var laMin=Math.min.apply(null,lats), laMax=Math.max.apply(null,lats), loMin=Math.min.apply(null,lngs), loMax=Math.max.apply(null,lngs);
+  var padX=46, padY=26, iw=W-padX*2, ih=H-padY*2;
+  var dLa=(laMax-laMin)||1, dLo=(loMax-loMin)||1;
+  function X(lng){ return padX + (pts.length===1?iw/2:(lng-loMin)/dLo*iw); }
+  function Y(lat){ return padY + (pts.length===1?ih/2:(laMax-lat)/dLa*ih); }
+  var poly=pts.map(function(p){return Math.round(X(p.lng))+","+Math.round(Y(p.lat));}).join(" ");
+  var grid='<g stroke="#cdddec" stroke-width="1">';
+  for(var gx=1;gx<4;gx++)grid+='<line x1="'+(W/4*gx)+'" y1="0" x2="'+(W/4*gx)+'" y2="'+H+'"/>';
+  for(var gy=1;gy<4;gy++)grid+='<line x1="0" y1="'+(H/4*gy)+'" x2="'+W+'" y2="'+(H/4*gy)+'"/>';
+  grid+='</g>';
+  var nodes="";
+  for(var j=0;j<pts.length;j++){
+    var x=Math.round(X(pts[j].lng)), y=Math.round(Y(pts[j].lat));
+    var anchorEnd = x > W*0.6;
+    var lx = anchorEnd ? x-15 : x+15;
+    nodes+='<circle cx="'+x+'" cy="'+y+'" r="11" fill="'+(j===0?"#0f2d4a":"#1a6fbf")+'"/>'
+      +'<text x="'+x+'" y="'+(y+4)+'" font-size="11" fill="#fff" text-anchor="middle" font-weight="700">'+(j+1)+'</text>'
+      +'<text x="'+lx+'" y="'+(y+4)+'" font-size="10.5" fill="#0f2d4a" font-weight="600" text-anchor="'+(anchorEnd?"end":"start")+'">'+esc(pts[j].name)+(j===0?" (inicio)":"")+'</text>';
+  }
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;background:#eaf0f6" font-family="Plus Jakarta Sans,sans-serif">'
+    +grid
+    +'<g><text x="'+(W-22)+'" y="16" font-size="9" fill="#8aa0b2" text-anchor="middle">N</text><path d="M'+(W-22)+' 18 L'+(W-25)+' 25 L'+(W-22)+' 23 L'+(W-19)+' 25 Z" fill="#5a7488"/></g>'
+    +'<polyline points="'+poly+'" fill="none" stroke="#1a6fbf" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
+    +nodes+'</svg>';
+}
+/* destinos dinamicos del form de viaje */
+var _tmpDest=[];
+function renderDestinos(){
+  var box=$("vdestinos"); if(!box)return;
+  box.innerHTML=_tmpDest.map(function(d,i){
+    return '<div style="display:flex;gap:7px;margin-bottom:7px"><select class="vdest" onchange="onCitySel(this,\'dest\','+i+')" style="flex:1;height:42px;border:1px solid var(--line2);border-radius:10px;background:var(--card);padding:0 12px">'+locOptions(d,"- destino -")+'</select><button type="button" class="closeb" onclick="removeDestino('+i+')" style="flex:none">&times;</button></div>';
+  }).join("");
+}
+function syncDestinos(){ var s=document.querySelectorAll("#vdestinos .vdest"); for(var i=0;i<s.length;i++){ if(s[i].value!=="__nueva__")_tmpDest[i]=s[i].value; } }
+function addDestino(){ syncDestinos(); _tmpDest.push(""); renderDestinos(); previewRuta(); }
+function removeDestino(i){ syncDestinos(); _tmpDest.splice(i,1); if(!_tmpDest.length)_tmpDest=[""]; renderDestinos(); previewRuta(); }
+function previewRuta(){ syncDestinos(); var box=$("vRutaPrev"); if(!box)return; var v={origen:$("vorigen").value, destinos:_tmpDest.filter(function(x){return x;})}; box.innerHTML=recorridoSVG(v,340,170); }
+
+function renderViajes(){
+  var box=$("viajeFiltros"); var estados=["todos","Planificado","En curso","Finalizado"]; var html="";
+  for(var i=0;i<estados.length;i++){var e=estados[i];html+='<button class="fchip '+(fViaje.estado===e?"on":"")+'" onclick="fViaje.estado=\''+e+'\';renderViajes()">'+(e==="todos"?"Todos":e)+'</button>';}
+  box.innerHTML=html;
+  var vs=viajesEmp().sort(function(a,b){return (b.fecha_inicio||"").localeCompare(a.fecha_inicio||"");});
+  if(fViaje.estado!=="todos")vs=vs.filter(function(v){return v.estado===fViaje.estado;});
+  var L2=$("listaViajes");
+  if(!vs.length){ L2.innerHTML='<div class="empty"><span class="mi">&#9906;</span>No hay viajes cargados todavia.<br>Toca + para crear el primero.</div>'+ciudadesBtnHtml(); return; }
+  var out="";
+  for(var k=0;k<vs.length;k++){
+    var v=vs[k], vt=viajeViatico(v);
+    var nc=contactosEmp().filter(function(c){return c.viaje_id===v._id;}).length;
+    var equipo=(v.integrantes||[]).filter(function(x,ix,a){return x&&a.indexOf(x)===ix;});
+    var equipoStr=equipo.length?equipo.map(function(id){return vchip(id)+vend(id).n;}).join("  "):'<span style="color:var(--mute)">sin integrantes</span>';
+    out+='<div class="card tap" onclick="openDetalleViaje(\''+v._id+'\')">'
+      +'<div class="row-between"><div class="ttl"><span style="color:var(--blue)">Viaje '+viajeNumero(v)+'</span> - '+esc(viajeTitulo(v))+'</div>'+estadoTag(v.estado)+'</div>'
+      +'<div class="sub">'+esc(viajeRuta(v))+'</div>'
+      +'<div class="sub">'+esc(v.provincia||"")+' - '+fmtDate(v.fecha_inicio)+(v.fecha_fin?" al "+fmtDate(v.fecha_fin):"")+(v.hora_salida?" - sale "+esc(v.hora_salida):"")+(v.hora_vuelta?" vuelve "+esc(v.hora_vuelta):"")+'</div>'
+      +'<div class="sub">'+equipoStr+'</div>'
+      +'<div class="sub">'+nc+' contactos - '+(parseFloat(v.km)||0)+' km - viatico '+money(vt.total)+'</div>'
+      +'</div>';
+  }
+  L2.innerHTML=out+ciudadesBtnHtml();
+}
+function ciudadesBtnHtml(){ return '<button class="btn ghost block" onclick="openCiudades()" style="margin:2px 0 14px">Ciudades cargadas por el equipo ('+Object.keys(DB.localidades||{}).length+')</button>'; }
+function openCiudades(){
+  $("sheetTitle").textContent="Ciudades del equipo";
+  var ids=Object.keys(DB.localidades||{});
+  var lista=ids.map(function(id){var d=DB.localidades[id];
+    return '<div class="inter"><span class="ic">&#9679;</span><div style="flex:1"><b>'+esc(d.nombre||"")+'</b><div style="color:var(--slate);font-size:11px">'+esc(d.provincia||"")+' - '+(d.lat!=null?parseFloat(d.lat).toFixed(3):"?")+', '+(d.lng!=null?parseFloat(d.lng).toFixed(3):"?")+'</div></div><button class="closeb" style="width:28px;height:28px;font-size:16px" onclick="borrarCiudad(\''+id+'\')">&times;</button></div>';
+  }).join("")||'<div class="sub">Todavia no agregaste ninguna. Las que vienen de fabrica no se listan aca.</div>';
+  $("sheetBody").innerHTML=
+    '<div class="note">Las ciudades que agregues quedan guardadas para todo el equipo y aparecen en los desplegables de origen, destinos y en los contactos.</div>'
+    +lista
+    +'<button class="btn block" style="margin-top:14px" onclick="nuevaCiudad(function(){openCiudades();})">+ Agregar ciudad</button>';
+  openSheet();
+}
+function borrarCiudad(id){
+  var d=DB.localidades[id]; if(!d)return;
+  if(confirm("Borrar "+(d.nombre||"esta ciudad")+" de la lista?"))
+    { delLocalidad(id); openCiudades(); }
+}
+
+function openViaje(id){
+  var nuevo = !id;
+  var v = id ? Object.assign({_id:id}, DB.viajes[id]) : {_id:"", numero:nextViajeNumero(), estado:"Planificado", km_rate:cfgKmRate(), fecha_inicio:todayISO(), gastos:[], integrantes:[], origen:"Rosario", destinos:[], itinerario:[]};
+  $("sheetTitle").textContent = (nuevo?"Nuevo viaje":"Editar viaje")+" - Viaje "+viajeNumero(v);
+  var eopt=["Planificado","En curso","Finalizado"].map(function(e){return '<option'+(e===v.estado?" selected":"")+'>'+e+'</option>';}).join("");
+  var integ=v.integrantes||[];
+  var integHtml=vendList().map(function(x){var on=integ.indexOf(x.id)>=0;return '<label class="integ"><input type="checkbox" class="vinteg" value="'+x.id+'"'+(on?" checked":"")+'><span class="vendchip" style="background:'+x.c+'"></span>'+x.n+'</label>';}).join("");
+  _tmpDest = (v.destinos||[]).slice(); if(!_tmpDest.length)_tmpDest=[""];
+  _tmpItin = JSON.parse(JSON.stringify(v.itinerario||[]));
+  $("sheetBody").innerHTML=
+    '<div class="divh">1 - El viaje</div>'
+    +'<div class="f2"><div class="field"><label>Fecha inicio</label><input type="date" id="vfi" value="'+esc(v.fecha_inicio||"")+'"></div>'
+    +'<div class="field"><label>Fecha fin</label><input type="date" id="vff" value="'+esc(v.fecha_fin||"")+'"></div></div>'
+    +'<div class="field"><label>Origen</label><select id="vorigen" data-prev="'+esc(v.origen||v.ciudad||"Rosario")+'" onchange="this.setAttribute(\'data-prev\',this.value!==\'__nueva__\'?this.value:this.getAttribute(\'data-prev\'));onCitySel(this,\'origen\')">'+locOptions(v.origen||v.ciudad||"Rosario","-")+'</select></div>'
+    +'<div class="field"><label>Destinos (en orden)</label><div id="vdestinos"></div><button type="button" class="btn ghost sm" onclick="addDestino()">+ Agregar destino</button></div>'
+    +'<div class="f2"><div class="field"><label>Hora de salida</label><input type="time" id="vhsal" value="'+esc(v.hora_salida||"")+'"></div>'
+    +'<div class="field"><label>Hora de vuelta</label><input type="time" id="vhvue" value="'+esc(v.hora_vuelta||"")+'"></div></div>'
+    +'<div class="field"><label>Kilometros reales del auto</label><input type="number" id="vkm" value="'+(v.km||"")+'" placeholder="los que marca el auto" oninput="calcViatico()"></div>'
+    +'<div class="field"><label>Provincia</label><select id="vprov">'+provOpts(v.provincia)+'</select></div>'
+    +'<div class="field"><label>Estado</label><select id="vestado">'+eopt+'</select></div>'
+    +'<div class="field"><label>Quienes viajan</label><div class="integgrid" id="vintegrantes">'+integHtml+'</div></div>'
+    +'<div class="field"><label>Recorrido</label><div id="vRutaPrev" style="border:1px solid var(--line2);border-radius:10px;overflow:hidden"></div></div>'
+    +'<div class="field"><label>Observaciones del viaje</label><textarea id="vobs">'+esc(v.observaciones||"")+'</textarea></div>'
+    +'<div class="divh">2 - Itinerario: a quien visitamos</div>'
+    +'<div id="vItin"></div>'
+    +'<button type="button" class="btn ghost block" onclick="addEmpresa()">+ Agregar visita al itinerario</button>'
+    +'<div class="divh">3 - Viaticos y gastos</div>'
+    +'<div class="field"><label>$ por km (editable)</label><input type="number" id="vrate" value="'+(v.km_rate||cfgKmRate())+'" oninput="calcViatico()"></div>'
+    +'<div class="note" id="viaticoNote"></div>'
+    +'<div class="field" style="margin-top:11px"><label>Gastos del viaje</label><div id="vGastos"></div><button type="button" class="btn ghost sm" onclick="addGasto()">+ Agregar gasto</button></div>'
+    +'<div class="field"><label>Observaciones de gastos</label><textarea id="vobsg">'+esc(v.obs_gastos||"")+'</textarea></div>'
+    +'<button class="btn block" style="margin-top:6px" onclick="submitViaje(\''+(id||"")+'\')">'+(nuevo?"Crear viaje":"Guardar cambios")+'</button>'
+    +(id?'<button class="btn ghost block" style="margin-top:10px;color:var(--err)" onclick="confirmDelViaje(\''+id+'\')">Eliminar viaje</button>':'');
+  openSheet(); renderDestinos(); previewRuta(); renderItin(); renderGastosForm(v.gastos||[]); calcViatico();
+}
+function calcViatico(){
+  var km=parseFloat(($("vkm")||{}).value)||0, rate=parseFloat(($("vrate")||{}).value)||0;
+  var amort=km*rate, gst=sumGastosForm();
+  var n=$("viaticoNote"); if(n)n.innerHTML="Viatico por km: <b>"+money(amort)+"</b>  |  Gastos: <b>"+money(gst)+"</b>  |  Total del viaje: <b style=\"color:var(--blue)\">"+money(amort+gst)+"</b>";
+}
+function submitViaje(id){
+  var integ=[]; var cks=document.querySelectorAll("#vintegrantes .vinteg"); for(var i=0;i<cks.length;i++){if(cks[i].checked)integ.push(cks[i].value);}
+  syncDestinos(); var destinos=_tmpDest.filter(function(x){return x && x!=="__nueva__";}); var origen=$("vorigen").value; if(origen==="__nueva__")origen="";
+  if(!origen && !destinos.length){alert("Elegi un origen o al menos un destino.");return;}
+  syncItin(); syncGastosForm();
+  var prev=DB.viajes[id]||{};
+  var vid=id||uid();
+  /* Guardar contactos del itinerario en la lista global, enlazados al viaje y a la empresa */
+  var itinOut=_tmpItin.map(function(e){
+    var conts=(e.contactos||[]).map(function(c){
+      if(!c.nombre && !c.apellido && !c.whatsapp) return null;
+      var cid=c._id||uid();
+      var pptoC=(c.n_presupuesto||"").trim()||(e.n_presupuesto||"").trim();
+      var cont={nombre:c.nombre||"", apellido:c.apellido||"", cargo:c.cargo||"", whatsapp:c.whatsapp||"",
+        empresa_estudio:e.empresa||"", empresa:e.grupo||"a2", direccion:e.direccion||"",
+        ciudad:(destinos[0]||origen||""), provincia:$("vprov").value,
+        viaje_id:vid, itin_empresa:e.empresa||"", n_presupuesto:pptoC,
+        etapa:(DB.contactos[cid]&&DB.contactos[cid].etapa)||"Prospecto",
+        potencial:(DB.contactos[cid]&&DB.contactos[cid].potencial)||"Medio",
+        vendedor:(DB.contactos[cid]&&DB.contactos[cid].vendedor)||ME,
+        interacciones:(DB.contactos[cid]&&DB.contactos[cid].interacciones)||[],
+        reunion_inicio:(DB.contactos[cid]&&DB.contactos[cid].reunion_inicio)||"",
+        reunion_fin:(DB.contactos[cid]&&DB.contactos[cid].reunion_fin)||"",
+        reunion_objetivo:(DB.contactos[cid]&&DB.contactos[cid].reunion_objetivo)||"",
+        reunion_notas:(DB.contactos[cid]&&DB.contactos[cid].reunion_notas)||"",
+        ts:(DB.contactos[cid]&&DB.contactos[cid].ts)||new Date().toISOString()};
+      if(fbRef)fbRef.child("contactos/"+cid).set(cont);
+      DB.contactos[cid]=cont;
+      return {_id:cid, nombre:c.nombre||"", apellido:c.apellido||"", cargo:c.cargo||"", whatsapp:c.whatsapp||"", n_presupuesto:c.n_presupuesto||""};
+    }).filter(function(x){return x;});
+    return {empresa:e.empresa||"", recibe:e.recibe||"", telefono:e.telefono||"", direccion:e.direccion||"", grupo:e.grupo||"a2", n_presupuesto:e.n_presupuesto||"", obs:e.obs||"", contactos:conts};
+  });
+  var v={_id:vid, numero:prev.numero||v_numeroFromForm(id), estado:$("vestado").value,
+    fecha_inicio:$("vfi").value, fecha_fin:$("vff").value, origen:origen, destinos:destinos,
+    ciudad:(destinos[0]||origen), provincia:$("vprov").value,
+    hora_salida:$("vhsal").value, hora_vuelta:$("vhvue").value,
+    km:parseFloat($("vkm").value)||0, km_rate:parseFloat($("vrate").value)||cfgKmRate(),
+    integrantes:integ, observaciones:$("vobs").value,
+    itinerario:itinOut, gastos:_tmpGastos.slice(), obs_gastos:$("vobsg").value,
+    ts:prev.ts||new Date().toISOString()};
+  saveViaje(v); closeSheet(); nav("viajes");
+}
+function v_numeroFromForm(id){ return id?(DB.viajes[id]&&DB.viajes[id].numero)||nextViajeNumero():nextViajeNumero(); }
+function confirmDelViaje(id){ if(confirm("Eliminar este viaje? Los contactos no se borran.")){ delViaje(id); closeSheet(); nav("viajes"); } }
+
+/* ---- Itinerario: empresas visitadas con contactos generados ---- */
+function grupoOpts(sel){ return empList().map(function(e){return '<option value="'+e.id+'"'+(e.id===(sel||"a2")?" selected":"")+'>'+e.n+'</option>';}).join(""); }
+function renderItin(){
+  var box=$("vItin"); if(!box)return;
+  if(!_tmpItin.length){ box.innerHTML='<div class="sub" style="margin:2px 0 10px">Todavia no cargaste visitas. Toca "+ Agregar visita" para sumar la primera empresa o estudio.</div>'; return; }
+  box.innerHTML=_tmpItin.map(function(e,i){
+    var conts=(e.contactos||[]).map(function(c,j){
+      var p="it-"+i+"-c-"+j;
+      return '<div class="itin-cont">'
+        +'<div class="row-between"><span class="mini-lbl">Contacto '+(j+1)+'</span><button type="button" class="closeb sm" onclick="removeContactoItin('+i+','+j+')">&times;</button></div>'
+        +'<div class="f2"><input id="'+p+'-nombre" placeholder="Nombre" value="'+esc(c.nombre||"")+'"><input id="'+p+'-apellido" placeholder="Apellido" value="'+esc(c.apellido||"")+'"></div>'
+        +'<div class="f2"><input id="'+p+'-cargo" placeholder="Cargo / profesion" value="'+esc(c.cargo||"")+'"><input id="'+p+'-wa" placeholder="WhatsApp" value="'+esc(c.whatsapp||"")+'"></div>'
+        +'<input id="'+p+'-ppto" placeholder="N presupuesto de este contacto (opcional)" value="'+esc(c.n_presupuesto||"")+'">'
+        +'</div>';
+    }).join("");
+    var p="it-"+i;
+    return '<div class="itin-emp">'
+      +'<div class="row-between"><b style="color:var(--navy)">Visita '+(i+1)+'</b><button type="button" class="closeb" onclick="removeEmpresa('+i+')">&times;</button></div>'
+      +'<input id="'+p+'-empresa" placeholder="Empresa / Estudio de arquitectura" value="'+esc(e.empresa||"")+'">'
+      +'<input id="'+p+'-recibe" placeholder="Quien nos recibe (nombre y apellido)" value="'+esc(e.recibe||"")+'">'
+      +'<div class="f2"><input id="'+p+'-tel" placeholder="Telefono" value="'+esc(e.telefono||"")+'"><select id="'+p+'-grupo">'+grupoOpts(e.grupo)+'</select></div>'
+      +'<input id="'+p+'-dir" placeholder="Direccion" value="'+esc(e.direccion||"")+'">'
+      +'<input id="'+p+'-ppto" placeholder="N presupuesto de la empresa (opcional)" value="'+esc(e.n_presupuesto||"")+'">'
+      +'<textarea id="'+p+'-obs" placeholder="Observaciones de esta visita">'+esc(e.obs||"")+'</textarea>'
+      +'<div class="mini-lbl" style="margin-top:8px">CONTACTOS GENERADOS</div>'
+      +conts
+      +'<button type="button" class="btn ghost sm" onclick="addContactoItin('+i+')">+ Generar contacto</button>'
+      +'</div>';
+  }).join("");
+}
+function syncItin(){
+  for(var i=0;i<_tmpItin.length;i++){ var p="it-"+i; var g=function(s){var el=$(p+s);return el?el.value:"";};
+    _tmpItin[i].empresa=g("-empresa"); _tmpItin[i].recibe=g("-recibe"); _tmpItin[i].telefono=g("-tel");
+    _tmpItin[i].direccion=g("-dir"); _tmpItin[i].grupo=g("-grupo")||"a2"; _tmpItin[i].n_presupuesto=g("-ppto"); _tmpItin[i].obs=g("-obs");
+    var cs=_tmpItin[i].contactos||[];
+    for(var j=0;j<cs.length;j++){ var q="it-"+i+"-c-"+j; var h=function(s){var el=$(q+s);return el?el.value:"";};
+      cs[j].nombre=h("-nombre"); cs[j].apellido=h("-apellido"); cs[j].cargo=h("-cargo"); cs[j].whatsapp=h("-wa"); cs[j].n_presupuesto=h("-ppto");
+    }
+  }
+}
+function addEmpresa(){ syncItin(); _tmpItin.push({empresa:"",recibe:"",telefono:"",direccion:"",grupo:"a2",n_presupuesto:"",obs:"",contactos:[]}); renderItin(); }
+function removeEmpresa(i){ syncItin(); _tmpItin.splice(i,1); renderItin(); }
+function addContactoItin(i){ syncItin(); if(!_tmpItin[i].contactos)_tmpItin[i].contactos=[]; _tmpItin[i].contactos.push({nombre:"",apellido:"",cargo:"",whatsapp:"",n_presupuesto:""}); renderItin(); }
+function removeContactoItin(i,j){ syncItin(); _tmpItin[i].contactos.splice(j,1); renderItin(); }
+
+/* ---- Gastos con categoria ---- */
+var _tmpGastos=[];
+function renderGastosForm(g){ _tmpGastos=(g||[]).slice(); drawGastos(); }
+function drawGastos(){
+  var box=$("vGastos"); if(!box)return;
+  if(!_tmpGastos.length){ box.innerHTML='<div class="sub" style="margin:2px 0 8px">Sin gastos cargados.</div>'; return; }
+  var cats=catGasto();
+  box.innerHTML=_tmpGastos.map(function(g,i){
+    var opts=cats.map(function(c){return '<option'+(c===g.categoria?" selected":"")+'>'+esc(c)+'</option>';}).join("");
+    return '<div class="gastorow"><select id="g-'+i+'-cat" onchange="syncGastosForm()">'+opts+'</select>'
+      +'<input id="g-'+i+'-desc" placeholder="Detalle" value="'+esc(g.descripcion||"")+'" oninput="syncGastosForm()">'
+      +'<input id="g-'+i+'-monto" type="number" placeholder="$" value="'+(g.monto||"")+'" oninput="syncGastosForm();calcViatico()">'
+      +'<button type="button" class="closeb sm" onclick="removeGasto('+i+')">&times;</button></div>';
+  }).join("");
+}
+function syncGastosForm(){ for(var i=0;i<_tmpGastos.length;i++){ var c=$("g-"+i+"-cat"),d=$("g-"+i+"-desc"),m=$("g-"+i+"-monto"); if(c)_tmpGastos[i].categoria=c.value; if(d)_tmpGastos[i].descripcion=d.value; if(m)_tmpGastos[i].monto=parseFloat(m.value)||0; } }
+function sumGastosForm(){ syncGastosForm(); return _tmpGastos.reduce(function(s,g){return s+(parseFloat(g.monto)||0);},0); }
+function addGasto(){ syncGastosForm(); _tmpGastos.push({categoria:catGasto()[0],descripcion:"",monto:0}); drawGastos(); }
+function removeGasto(i){ syncGastosForm(); _tmpGastos.splice(i,1); drawGastos(); calcViatico(); }
+
+function openDetalleViaje(id){
+  var v=DB.viajes[id]; if(!v)return;
+  var vt=viajeViatico(Object.assign({_id:id},v));
+  var cs=contactosEmp().filter(function(c){return c.viaje_id===id;});
+  $("sheetTitle").textContent="Viaje "+viajeNumero(v)+" - "+viajeTitulo(v);
+  var equipo=(v.integrantes||[]).filter(function(x,ix,a){return x&&a.indexOf(x)===ix;});
+  var equipoStr=equipo.length?equipo.map(function(eid){return vchip(eid)+vend(eid).n;}).join("  "):"sin integrantes";
+  var gastosHtml=(v.gastos||[]).map(function(g){return '<div class="inter"><span class="ic">$</span><div style="flex:1">'+esc(g.descripcion||g.desc||g.categoria||g.tipo||"Gasto")+'<div style="color:var(--slate);font-size:11px">'+esc(g.categoria||g.tipo||"")+'</div></div><b>'+money(g.monto)+'</b></div>';}).join("")||'<div class="sub">Sin gastos cargados.</div>';
+  var contHtml=cs.map(function(c){return '<div class="card tap" onclick="closeSheet();setTimeout(function(){openContacto(\''+c._id+'\')},250)"><div class="row-between"><div class="ttl" style="font-size:14px">'+esc(nombreContacto(c))+'</div><span class="tag '+potClass(c.potencial)+'">'+esc(c.potencial||"-")+'</span></div><div class="sub">'+esc(c.etapa||"Prospecto")+(c.ciudad?" - "+esc(c.ciudad):"")+'</div></div>';}).join("")||'<div class="sub">Todavia no hay contactos en este viaje.</div>';
+  var reuniones=cs.filter(function(c){return c.reunion_inicio;}).sort(function(a,b){return (a.reunion_inicio||"").localeCompare(b.reunion_inicio||"");});
+  var itinHtml=reuniones.length?reuniones.map(function(c){return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)"><div style="font-weight:700;color:var(--blue);width:92px;flex:none;font-size:12.5px">'+esc(c.reunion_inicio)+(c.reunion_fin?"-"+esc(c.reunion_fin):"")+'</div><div><div style="font-weight:600;font-size:13px">'+esc(nombreContacto(c))+'</div><div class="sub" style="margin:0">'+esc(c.reunion_notas||c.reunion_objetivo||"")+'</div></div></div>';}).join(""):'<div class="sub">Sin reuniones agendadas. Cargalas en el recuadro de cada contacto.</div>';
+  $("sheetBody").innerHTML=
+    '<div class="card"><div class="sub" style="margin-top:0">'+estadoTag(v.estado)+'</div>'
+    +'<div class="sub">'+esc(v.provincia||"")+' - '+fmtDate(v.fecha_inicio)+(v.fecha_fin?" al "+fmtDate(v.fecha_fin):"")+'</div>'
+    +'<div class="sub"><b>Equipo:</b> '+equipoStr+'</div>'
+    +(v.objetivo?'<div class="sub"><b>Objetivo:</b> '+esc(v.objetivo)+'</div>':'')+'</div>'
+    +'<div class="divh">Recorrido</div>'
+    +'<div class="card" style="padding:0;overflow:hidden">'+recorridoSVG(v,340,180)+'</div>'
+    +'<div class="sub" style="margin:-2px 0 0"><b>Ruta:</b> '+esc(viajeRuta(v))+' - '+(parseFloat(v.km)||0)+' km totales</div>'
+    +'<div class="divh">Itinerario de reuniones</div>'+itinHtml
+    +'<div class="divh">Rendicion</div>'
+    +'<div class="card"><div class="row-between"><span class="sub" style="margin:0">Amortizacion ('+(v.km||0)+' km x '+money(v.km_rate||KMRATE)+')</span><b>'+money(vt.amort)+'</b></div>'
+    +'<div class="row-between" style="margin-top:6px"><span class="sub" style="margin:0">Gastos</span><b>'+money(vt.gastos)+'</b></div>'
+    +'<div class="row-between" style="margin-top:6px;border-top:1px solid var(--line);padding-top:8px"><span class="ttl" style="font-size:14px">Total viatico</span><b style="color:var(--blue)">'+money(vt.total)+'</b></div>'
+    +(v.adelanto?'<div class="row-between" style="margin-top:6px"><span class="sub" style="margin:0">Sobrante del adelanto</span><b>'+money((v.adelanto||0)-vt.total)+'</b></div>':'')+'</div>'
+    +gastosHtml
+    +'<button class="btn ghost sm block" onclick="addGasto(\''+id+'\')" style="margin-top:8px">+ Agregar gasto</button>'
+    +'<div class="divh">Contactos del viaje ('+cs.length+')</div>'+contHtml
+    +'<button class="btn ghost block" onclick="closeSheet();setTimeout(function(){openContacto(null,\''+id+'\')},250)" style="margin-top:8px">+ Agregar contacto a este viaje</button>'
+    +'<button class="btn ghost block" onclick="openViaje(\''+id+'\')" style="margin-top:10px">Editar datos del viaje</button>';
+  openSheet();
+}
+function addGasto(id){
+  var desc=prompt("Descripcion del gasto (ej: peaje, comida, combustible):"); if(desc===null)return;
+  var tipo=prompt("Tipo (Combustible / Comida / Peaje / Alojamiento / Otro):","Otro")||"Otro";
+  var monto=parseFloat(prompt("Monto $:","0"))||0;
+  var v=DB.viajes[id]; if(!v)return; v.gastos=v.gastos||[]; v.gastos.push({desc:desc,tipo:tipo,monto:monto});
+  saveViaje(Object.assign({_id:id},v)); openDetalleViaje(id);
+}
+
+/* =================== CONTACTOS =================== */
+function potClass(p){ if(p==="Alto")return "t-ok"; if(p==="Medio")return "t-warn"; if(p==="Bajo")return "t-mute"; return "t-mute"; }
+function nombreContacto(c){ return c.empresa_estudio || ((c.nombre||"")+" "+(c.apellido||"")).trim() || "Sin nombre"; }
+
+function renderContactos(){
+  var box=$("contactoFiltros");
+  var html='<button class="fchip '+(fCont.pot==="todos"?"on":"")+'" onclick="fCont.pot=\'todos\';renderContactos()">Todos</button>';
+  for(var i=0;i<potList().length;i++){var p=potList()[i];html+='<button class="fchip '+(fCont.pot===p?"on":"")+'" onclick="fCont.pot=\''+p+'\';renderContactos()">'+p+'</button>';}
+  box.innerHTML=html;
+  var q=($("buscador").value||"").toLowerCase();
+  var cs=contactosEmp();
+  if(fCont.pot!=="todos")cs=cs.filter(function(c){return c.potencial===fCont.pot;});
+  if(q)cs=cs.filter(function(c){return (nombreContacto(c)+" "+(c.cuit||"")+" "+(c.ciudad||"")+" "+(c.rubro||"")+" "+(c.cargo||"")).toLowerCase().indexOf(q)>=0;});
+  cs.sort(function(a,b){return nombreContacto(a).localeCompare(nombreContacto(b));});
+  var L2=$("listaContactos");
+  if(!cs.length){ L2.innerHTML='<div class="empty"><span class="mi">&#9783;</span>Sin contactos.<br>Toca + para sumar uno.</div>'; return; }
+  var out="";
+  for(var k=0;k<cs.length;k++){
+    var c=cs[k];
+    out+='<div class="card tap" onclick="openContacto(\''+c._id+'\')">'
+      +'<div class="row-between"><div class="ttl" style="font-size:14px">'+esc(nombreContacto(c))+'</div><span class="tag '+potClass(c.potencial)+'">'+esc(c.potencial||"-")+'</span></div>'
+      +'<div class="sub">'+esc(c.cargo||c.profesion||"")+(c.ciudad?" - "+esc(c.ciudad):"")+(c.provincia?", "+esc(c.provincia):"")+'</div>'
+      +'<div class="sub"><span class="tag '+(c.empresa==="office"?"t-mute":"t-info")+'" style="font-size:10px;padding:1px 7px;margin-right:5px">'+esc(empName(c.empresa||"a2"))+'</span>'+vchip(c.vendedor||ME)+esc(c.etapa||"Prospecto")+(c.viaje_id?' - <span style="color:var(--blue)">en 1 viaje</span>':'')+'</div>'
+      +'</div>';
+  }
+  L2.innerHTML=out;
+}
+
+function openContacto(id, viajeId){
+  var c = id ? Object.assign({_id:id}, DB.contactos[id]) : {_id:"", empresa:"a2", vendedor:ME, etapa:"Prospecto", potencial:"Medio", viaje_id:viajeId||"", interacciones:[]};
+  $("sheetTitle").textContent = id ? "Contacto" : "Nuevo contacto";
+  var potopt=potList().map(function(p){return '<option'+(p===c.potencial?" selected":"")+'>'+p+'</option>';}).join("");
+  var etopt=etapaList().map(function(e){return '<option'+(e===c.etapa?" selected":"")+'>'+e+'</option>';}).join("");
+  var vopt=vendList().map(function(x){return '<option value="'+x.id+'"'+(x.id===(c.vendedor||ME)?" selected":"")+'>'+x.n+'</option>';}).join("");
+  var empopt=empList().map(function(e){return '<option value="'+e.id+'"'+(e.id===(c.empresa||"a2")?" selected":"")+'>'+e.full+'</option>';}).join("");
+  var viajesOpt='<option value="">- ninguno -</option>'+viajesEmp().sort(function(a,b){return (b.fecha_inicio||"").localeCompare(a.fecha_inicio||"");}).map(function(v){return '<option value="'+v._id+'"'+(v._id===c.viaje_id?" selected":"")+'>'+esc(viajeTitulo(v))+" - "+fmtDate(v.fecha_inicio)+'</option>';}).join("");
+  var interHtml=(c.interacciones||[]).slice().reverse().map(function(it){return '<div class="inter"><span class="ic">'+(it.tipo==="Llamada"?"&#9742;":it.tipo==="Reunion"?"&#9783;":"&#9993;")+'</span><div style="flex:1">'+esc(it.tipo)+' - '+esc(it.nota||"")+'<div style="color:var(--slate);font-size:11px">'+fmtDate(it.fecha)+'</div></div></div>';}).join("")||'<div class="sub">Sin interacciones registradas.</div>';
+  $("sheetBody").innerHTML=
+    '<div class="f2"><div class="field"><label>Nombre</label><input id="cnom" value="'+esc(c.nombre||"")+'"></div>'
+    +'<div class="field"><label>Apellido</label><input id="cape" value="'+esc(c.apellido||"")+'"></div></div>'
+    +'<div class="field"><label>Empresa / Estudio</label><input id="cemp" value="'+esc(c.empresa_estudio||"")+'"></div>'
+    +'<div class="field"><label>Pertenece a (para el cruce con ventas)</label><select id="cempresa">'+empopt+'</select></div>'
+    +'<div class="f2"><div class="field"><label>Profesion</label><input id="cprof" value="'+esc(c.profesion||"")+'"></div>'
+    +'<div class="field"><label>Cargo</label><input id="ccargo" value="'+esc(c.cargo||"")+'"></div></div>'
+    +'<div class="f2"><div class="field"><label>WhatsApp</label><input id="cwa" value="'+esc(c.whatsapp||"")+'"></div>'
+    +'<div class="field"><label>Email</label><input id="cmail" value="'+esc(c.email||"")+'"></div></div>'
+    +'<div class="field"><label>Direccion</label><input id="cdir" value="'+esc(c.direccion||"")+'"></div>'
+    +'<div class="f2"><div class="field"><label>Ciudad <span style="color:var(--blue);font-weight:700;cursor:pointer" onclick="nuevaCiudad(function(n){var e=$(\'cciudad\');if(e)e.value=n;})">+ nueva</span></label><input id="cciudad" list="locList" value="'+esc(c.ciudad||"")+'"><datalist id="locList">'+locNames().map(function(l){return '<option value="'+esc(l)+'">';}).join("")+'</datalist></div>'
+    +'<div class="field"><label>Provincia</label><select id="cprov">'+provOpts(c.provincia)+'</select></div></div>'
+    +'<div class="f2"><div class="field"><label>Rubro</label><input id="crubro" value="'+esc(c.rubro||"")+'"></div>'
+    +'<div class="field"><label>CUIT</label><input id="ccuit" value="'+esc(c.cuit||"")+'"></div></div>'
+    +'<div class="field"><label>Potencial</label><select id="cpot">'+potopt+'</select></div>'
+    +'<div class="field"><label>Observaciones</label><textarea id="cobs">'+esc(c.observaciones||"")+'</textarea></div>'
+    +'<div class="divh">Seguimiento comercial</div>'
+    +'<div class="f2"><div class="field"><label>Etapa</label><select id="cetapa">'+etopt+'</select></div>'
+    +'<div class="field"><label>Vendedor</label><select id="cvend">'+vopt+'</select></div></div>'
+    +'<div class="field"><label>Proximo contacto</label><input type="date" id="cprox" value="'+esc(c.prox_contacto||"")+'"></div>'
+    +'<div class="field"><label>Viaje asociado</label><select id="cviaje">'+viajesOpt+'</select></div>'
+    +'<div style="border:1px solid var(--line2);border-radius:12px;padding:12px 13px;background:var(--card2);margin-bottom:12px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:9px">&#128197; Agenda de reunion (va al itinerario del viaje)</div>'
+    +'<div class="f2"><div class="field" style="margin-bottom:9px"><label>Hora inicio</label><input type="time" id="crini" value="'+esc(c.reunion_inicio||"")+'"></div>'
+    +'<div class="field" style="margin-bottom:9px"><label>Hora fin</label><input type="time" id="crfin" value="'+esc(c.reunion_fin||"")+'"></div></div>'
+    +'<div class="field" style="margin-bottom:9px"><label>Objetivo de la reunion</label><input id="crobj" value="'+esc(c.reunion_objetivo||"")+'" placeholder="ej: presentar linea ejecutiva"></div>'
+    +'<div class="field" style="margin-bottom:0"><label>Lo que se hablo</label><textarea id="crnotas" style="min-height:52px" placeholder="resumen corto de la reunion">'+esc(c.reunion_notas||"")+'</textarea></div>'
+    +'</div>'
+    +'<div class="divh">Integracion con ventas</div>'
+    +'<div class="note">El N de presupuesto es el unico ID del cruce con tu app de ventas ('+esc(empObj(c.empresa||"a2").ventasPath)+'). Cargalo cuando emitas el presupuesto; el cruce lo activamos mas adelante.</div>'
+    +'<div class="field"><label>N de presupuesto</label><input id="cppto" value="'+esc(c.n_presupuesto||"")+'" placeholder="ej: 4821"></div>'
+    +'<div class="divh">Interacciones</div>'+interHtml
+    +'<button class="btn ghost sm block" onclick="addInter(\''+(id||"")+'\')" style="margin-top:8px;display:'+(id?"flex":"none")+'">+ Registrar interaccion</button>'
+    +'<button class="btn block" style="margin-top:16px" onclick="submitContacto(\''+(id||"")+'\')">'+(id?"Guardar cambios":"Crear contacto")+'</button>'
+    +(id?'<button class="btn ghost block" style="margin-top:10px;color:var(--err)" onclick="confirmDelContacto(\''+id+'\')">Eliminar contacto</button>':'');
+  openSheet();
+}
+function readContacto(id){
+  return {_id:id, nombre:$("cnom").value, apellido:$("cape").value, empresa_estudio:$("cemp").value, profesion:$("cprof").value,
+    cargo:$("ccargo").value, whatsapp:$("cwa").value, email:$("cmail").value, direccion:$("cdir").value,
+    ciudad:$("cciudad").value, provincia:$("cprov").value, rubro:$("crubro").value, cuit:$("ccuit").value, potencial:$("cpot").value,
+    observaciones:$("cobs").value, etapa:$("cetapa").value, vendedor:$("cvend").value, prox_contacto:$("cprox").value,
+    viaje_id:$("cviaje").value, n_presupuesto:$("cppto").value, empresa:$("cempresa").value,
+    reunion_inicio:$("crini").value, reunion_fin:$("crfin").value, reunion_objetivo:$("crobj").value, reunion_notas:$("crnotas").value,
+    interacciones:(DB.contactos[id]&&DB.contactos[id].interacciones)||[], ts:(DB.contactos[id]&&DB.contactos[id].ts)||new Date().toISOString(), creado:(DB.contactos[id]&&DB.contactos[id].creado)||todayISO()};
+}
+function submitContacto(id){
+  var c=readContacto(id);
+  if(!nombreContacto(c)||nombreContacto(c)==="Sin nombre"){alert("Carga al menos nombre o empresa.");return;}
+  if(!id && c.cuit){
+    var dup=contactosEmp().filter(function(x){return (x.cuit||"")===c.cuit;});
+    if(dup.length && !confirm("Ya existe un contacto con ese CUIT ("+nombreContacto(dup[0])+"). Crear igual?"))return;
+  }
+  saveContacto(c); closeSheet();
+}
+function confirmDelContacto(id){ if(confirm("Eliminar este contacto de la base?")){delContacto(id);closeSheet();} }
+function addInter(id){
+  if(!id)return;
+  var tipo=prompt("Tipo (Llamada / Reunion / Correo):","Llamada")||"Llamada";
+  var nota=prompt("Nota:")||"";
+  var c=DB.contactos[id]; if(!c)return; c.interacciones=c.interacciones||[]; c.interacciones.push({tipo:tipo,nota:nota,fecha:todayISO()});
+  saveContacto(Object.assign({_id:id},c)); openContacto(id);
+}
+
+/* =================== PIPELINE =================== */
+function renderPipeline(){
+  var cs=contactosEmp();
+  var box=$("stages"); var sh="";
+  for(var i=0;i<etapaList().length;i++){var e=etapaList()[i];var n=cs.filter(function(c){return (c.etapa||"Prospecto")===e;}).length;
+    sh+='<div class="stg" onclick="fPipe=\''+e+'\';renderPipeline()"><span class="ic">'+ETAPA_ICO[e]+'</span><span class="nm">'+e+'</span><span class="ct">'+n+'</span></div>';}
+  box.innerHTML=sh;
+  $("pipeFiltros").innerHTML='<button class="fchip '+(fPipe==="todas"?"on":"")+'" onclick="fPipe=\'todas\';renderPipeline()">Todas</button>'
+    +etapaList().map(function(e){return '<button class="fchip '+(fPipe===e?"on":"")+'" onclick="fPipe=\''+e+'\';renderPipeline()">'+e+'</button>';}).join("");
+  var fcs = fPipe==="todas" ? cs.filter(function(c){return ACTIVAS.indexOf(c.etapa)>=0||c.etapa==="Prospecto";}) : cs.filter(function(c){return (c.etapa||"Prospecto")===fPipe;});
+  fcs.sort(function(a,b){return (a.prox_contacto||"9999").localeCompare(b.prox_contacto||"9999");});
+  var L2=$("listaPipe");
+  if(!fcs.length){L2.innerHTML='<div class="empty"><span class="mi">&#9647;</span>Nada en esta etapa.</div>';return;}
+  var out="";
+  for(var k=0;k<fcs.length;k++){var c=fcs[k];
+    out+='<div class="card tap" onclick="openContacto(\''+c._id+'\')">'
+      +'<div class="row-between"><div class="ttl" style="font-size:14px">'+esc(nombreContacto(c))+'</div><span class="tag t-info">'+esc(c.etapa||"Prospecto")+'</span></div>';
+    if(c.n_presupuesto)out+='<div class="sub">&#128279; N ppto '+esc(c.n_presupuesto)+'</div>';
+    out+='<div class="sub">'+vchip(c.vendedor||ME)+esc(vend(c.vendedor||ME).n)+(c.prox_contacto?' - prox: '+fmtDate(c.prox_contacto):'')+'</div></div>';
+  }
+  L2.innerHTML=out;
+}
+
+/* =================== REPORTES =================== */
+function fillRepSelect(){
+  var sel=$("repViaje"); var prev=sel.value;
+  var vs=viajesEmp().sort(function(a,b){return (b.fecha_inicio||"").localeCompare(a.fecha_inicio||"");});
+  sel.innerHTML=vs.length?vs.map(function(v){return '<option value="'+v._id+'">'+esc(viajeTitulo(v))+" - "+fmtDate(v.fecha_inicio)+'</option>';}).join(""):'<option value="">Sin viajes</option>';
+  if(prev)sel.value=prev;
+}
+function repData(viajeId){
+  var v=DB.viajes[viajeId]; if(!v)return null;
+  var cs=contactosEmp().filter(function(c){return c.viaje_id===viajeId;});
+  var reuniones=cs.reduce(function(s,c){return s+((c.interacciones||[]).filter(function(i){return i.tipo==="Reunion";}).length);},0)+cs.filter(function(c){return c.etapa==="Reunion realizada";}).length;
+  var oport=cs.filter(function(c){return ACTIVAS.indexOf(c.etapa)>=0;}).length;
+  var pptos=cs.filter(function(c){return c.n_presupuesto&&(""+c.n_presupuesto).trim();}).length;
+  var ganados=cs.filter(function(c){return c.etapa==="Cliente ganado";}).length;
+  var vt=viajeViatico(Object.assign({_id:viajeId},v));
+  var conv=pptos>0?Math.round(ganados/pptos*100):0;
+  return {v:v,contactos:cs.length,reuniones:reuniones,oport:oport,pptos:pptos,ganados:ganados,costo:vt.total,conv:conv};
+}
+function renderReporte(){
+  var id=$("repViaje").value, body=$("reporteBody");
+  if(!id){body.innerHTML='<div class="empty">Crea un viaje para ver su reporte.</div>';return;}
+  var d=repData(id); if(!d){body.innerHTML="";return;}
+  body.innerHTML=
+    '<div class="mgrid" style="margin-bottom:10px">'
+    +'<div class="metric"><div class="l">Contactos</div><div class="n">'+d.contactos+'</div></div>'
+    +'<div class="metric"><div class="l">Reuniones</div><div class="n">'+d.reuniones+'</div></div>'
+    +'<div class="metric"><div class="l">Pptos emitidos</div><div class="n">'+d.pptos+'</div></div>'
+    +'<div class="metric"><div class="l">Ganados</div><div class="n">'+d.ganados+'</div></div></div>'
+    +'<div class="card"><div class="row-between"><span class="ttl" style="font-size:14px">Conversion</span><b style="color:var(--blue)">'+d.conv+'%</b></div>'
+    +'<div class="row-between" style="margin-top:8px"><span class="sub" style="margin:0">Costo del viaje</span><b>'+money(d.costo)+'</b></div>'
+    +'<div class="row-between" style="margin-top:6px"><span class="sub" style="margin:0">Retorno comercial real</span><span class="tag t-mute">pendiente cruce ventas</span></div>'
+    +'<div class="note" style="margin:10px 0 0">El retorno real se leera de seguimiento_a2 u seguimiento_office segun la empresa de cada contacto, cruzando por N de presupuesto.</div></div>';
+}
+function printReporte(){
+  var id=$("repViaje").value; var d=id?repData(id):null;
+  if(!d){alert("Elegi un viaje primero.");return;}
+  var v=d.v, eA2=empObj("a2"), eOf=empObj("office");
+  var now=new Date();
+  var fechaExp=now.toLocaleDateString("es-AR")+" "+now.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+  var equipo=(v.integrantes||[]).filter(function(x,ix,a){return x&&a.indexOf(x)===ix;}).map(function(eid){return vend(eid).n;}).join(", ")||"-";
+  var cs=contactosEmp().filter(function(c){return c.viaje_id===v._id;});
+  var reuniones=cs.filter(function(c){return c.reunion_inicio;}).sort(function(a,b){return (a.reunion_inicio||"").localeCompare(b.reunion_inicio||"");});
+  var paradas=viajeCiudades(v);
+  var kpi=function(l,n){return '<div style="flex:1;min-width:90px;background:#f4f8fc;border:1px solid #e0ebf5;border-radius:10px;padding:11px 13px"><div style="font-size:11px;color:#5a7488;text-transform:uppercase;letter-spacing:.04em">'+l+'</div><div style="font-size:23px;font-weight:700;color:#0f2d4a;margin-top:2px">'+n+'</div></div>';};
+  var paradasHtml=paradas.map(function(p,i){return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12.5px"><span style="width:18px;height:18px;border-radius:50%;background:'+(i===0?"#0f2d4a":"#1a6fbf")+';color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none">'+(i+1)+'</span>'+esc(p)+(i===0?' <span style="color:#8aa0b2">(inicio)</span>':'')+'</div>';}).join("");
+  var itinHtml=reuniones.length?reuniones.map(function(c){return '<div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid #eef3f8"><div style="font-size:12.5px;font-weight:700;color:#1a6fbf;width:96px;flex:none">'+esc(c.reunion_inicio)+(c.reunion_fin?"-"+esc(c.reunion_fin):"")+'</div><div><div style="font-size:12.5px;font-weight:600;color:#0f2d4a">'+esc(nombreContacto(c))+'</div><div style="font-size:11.5px;color:#5a7488">'+esc(c.reunion_notas||c.reunion_objetivo||"")+'</div></div></div>';}).join(""):'<div style="font-size:12px;color:#8aa0b2;padding:6px 0">Sin reuniones agendadas para este viaje.</div>';
+  var visitas=v.itinerario||[];
+  var visitasHtml=visitas.length?visitas.map(function(e,i){
+    var conts=(e.contactos||[]).map(function(c){
+      var nom=((c.nombre||"")+" "+(c.apellido||"")).trim()||"contacto";
+      var extra=[c.cargo,c.whatsapp].filter(function(x){return x;}).join(" - ");
+      var pp=c.n_presupuesto?' <span style="color:#1a6fbf;font-weight:600">[Ppto '+esc(c.n_presupuesto)+']</span>':'';
+      return '<div style="font-size:12px;color:#5a7488;padding:2px 0">&#8226; <b style="color:#0f2d4a">'+esc(nom)+'</b>'+(extra?' ('+esc(extra)+')':'')+pp+'</div>';
+    }).join("");
+    return '<div style="border:1px solid #e6eef6;border-radius:9px;padding:10px 12px;margin-bottom:8px">'
+      +'<div style="font-size:13.5px;font-weight:700;color:#0f2d4a">'+esc(e.empresa||("Visita "+(i+1)))+(e.n_presupuesto?' <span style="font-size:11px;color:#1a6fbf;font-weight:600">- Presupuesto N '+esc(e.n_presupuesto)+'</span>':'')+'</div>'
+      +(e.recibe?'<div style="font-size:12px;color:#5a7488;margin-top:3px"><b>Recibe:</b> '+esc(e.recibe)+(e.telefono?' &nbsp;-&nbsp; Tel: '+esc(e.telefono):"")+'</div>':'')
+      +(e.direccion?'<div style="font-size:12px;color:#5a7488">'+esc(e.direccion)+'</div>':'')
+      +(conts?'<div style="margin-top:5px;border-top:1px solid #f0f5fa;padding-top:5px">'+conts+'</div>':'')
+      +(e.obs?'<div style="font-size:11.5px;color:#8aa0b2;margin-top:5px;font-style:italic">'+esc(e.obs)+'</div>':'')
+      +'</div>';
+  }).join(""):'<div style="font-size:12px;color:#8aa0b2;padding:6px 0">Sin visitas cargadas en el itinerario.</div>';
+  var html=''
+    +'<div style="font-family:Plus Jakarta Sans,sans-serif;color:#0c1f2e">'
+    +'<div style="display:flex;align-items:center;gap:11px;padding-bottom:14px">'
+      +'<div style="display:flex;gap:6px">'
+        +'<div style="width:46px;height:46px;border-radius:11px;background:linear-gradient(135deg,#4da6e8,#1a6fbf);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px">A2</div>'
+        +'<div style="width:46px;height:46px;border-radius:11px;background:linear-gradient(135deg,#5f7488,#2c4a64);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px">OA</div>'
+      +'</div>'
+      +'<div style="flex:1"><div style="font-size:15px;font-weight:700;color:#0f2d4a;line-height:1.15">'+esc(eA2.full)+'</div><div style="font-size:13px;font-weight:600;color:#2c4a64;line-height:1.15">'+esc(eOf.full)+'</div></div>'
+      +'<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:#1a6fbf;text-transform:uppercase;letter-spacing:.05em">Viaje de prospeccion</div><div style="font-size:11px;color:#8aa0b2">Exportado: '+fechaExp+'</div></div>'
+    +'</div>'
+    +'<div style="height:4px;background:linear-gradient(90deg,#0f2d4a,#1a6fbf,#4da6e8);border-radius:99px"></div>'
+    +'<div style="font-size:24px;font-weight:700;color:#0f2d4a;margin:18px 0 2px">Viaje '+viajeNumero(v)+' - '+esc(viajeTitulo(v))+'</div>'
+    +'<div style="font-size:13px;color:#5a7488;margin-bottom:16px">'+esc(v.provincia||"")+' &nbsp;|&nbsp; '+fmtDate(v.fecha_inicio)+(v.fecha_fin?" al "+fmtDate(v.fecha_fin):"")+(v.hora_salida?" &nbsp;|&nbsp; Sale "+esc(v.hora_salida):"")+(v.hora_vuelta?" - Vuelve "+esc(v.hora_vuelta):"")+' &nbsp;|&nbsp; '+estadoTexto(v.estado)+'</div>'
+    +'<table style="width:100%;font-size:13px;border-collapse:collapse;margin-bottom:16px">'
+      +'<tr><td style="padding:5px 0;color:#5a7488;width:130px">Integrantes</td><td style="padding:5px 0;font-weight:600">'+esc(equipo)+'</td></tr>'
+      +(v.objetivo?'<tr><td style="padding:5px 0;color:#5a7488">Objetivo</td><td style="padding:5px 0;font-weight:600">'+esc(v.objetivo)+'</td></tr>':'')
+    +'</table>'
+    +'<div style="font-size:12px;font-weight:700;color:#5a7488;letter-spacing:.05em;margin-bottom:8px">RECORRIDO DEL VIAJE</div>'
+    +'<div style="border:1px solid #d8e6f2;border-radius:10px;overflow:hidden;margin-bottom:10px">'+recorridoSVG(v,500,250)+'</div>'
+    +'<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:18px"><div style="flex:1;min-width:160px">'+paradasHtml+'</div>'
+      +'<div style="text-align:right;font-size:13px;color:#5a7488;align-self:flex-end">Total recorrido<div style="font-size:22px;font-weight:700;color:#1a6fbf">'+(parseFloat(v.km)||0)+' km</div></div></div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">'+kpi("Contactos",d.contactos)+kpi("Reuniones",d.reuniones)+kpi("Oportunidades",d.oport)+'</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">'+kpi("Pptos emitidos",d.pptos)+kpi("Ganados",d.ganados)+kpi("Conversion",d.conv+"%")+'</div>'
+    +'<div style="font-size:12px;font-weight:700;color:#5a7488;letter-spacing:.05em;margin-bottom:8px">ITINERARIO - EMPRESAS VISITADAS</div>'
+    +'<div style="margin-bottom:18px">'+visitasHtml+'</div>'
+    +'<div style="font-size:12px;font-weight:700;color:#5a7488;letter-spacing:.05em;margin-bottom:6px">ITINERARIO DE REUNIONES</div>'
+    +'<div style="border:1px solid #d8e6f2;border-radius:10px;padding:4px 14px;margin-bottom:18px">'+itinHtml+'</div>'
+    +(v.observaciones?'<div style="font-size:12px;font-weight:700;color:#5a7488;letter-spacing:.05em;margin-bottom:6px">OBSERVACIONES DEL VIAJE</div><div style="border:1px solid #d8e6f2;border-radius:10px;padding:11px 14px;margin-bottom:18px;font-size:12.5px;color:#3d566b;white-space:pre-wrap;line-height:1.5">'+esc(v.observaciones)+'</div>':'')
+    +(v.obs_gastos?'<div style="font-size:12px;font-weight:700;color:#5a7488;letter-spacing:.05em;margin-bottom:6px">OBSERVACIONES DE GASTOS</div><div style="border:1px solid #d8e6f2;border-radius:10px;padding:11px 14px;margin-bottom:18px;font-size:12.5px;color:#3d566b;white-space:pre-wrap;line-height:1.5">'+esc(v.obs_gastos)+'</div>':'')
+    +'<div style="border:1px solid #e0ebf5;border-radius:12px;padding:14px 16px;background:#f9fbfe">'
+      +'<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#5a7488">Viatico ('+(parseFloat(v.km)||0)+' km x '+money(v.km_rate||KMRATE)+')</span><b style="color:#0f2d4a">'+money(d.costo-(reduceGastos(v)))+'</b></div>'
+      +'<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#5a7488">Gastos</span><b style="color:#0f2d4a">'+money(reduceGastos(v))+'</b></div>'
+      +'<div style="display:flex;justify-content:space-between;padding:8px 0 4px;border-top:1px solid #e0ebf5;margin-top:4px"><span style="font-weight:700;color:#0f2d4a">Costo del viaje</span><b style="color:#1a6fbf">'+money(d.costo)+'</b></div>'
+      +'<div style="display:flex;justify-content:space-between;padding:8px 0 4px;border-top:1px solid #e0ebf5;margin-top:4px"><span style="color:#5a7488">Retorno comercial real</span><span style="color:#8aa0b2;font-style:italic">pendiente de cruce con ventas</span></div>'
+    +'</div>'
+    +'<div style="margin-top:24px;border-top:1px solid #e0ebf5;padding-top:10px;font-size:11px;color:#8aa0b2;display:flex;justify-content:space-between">'
+      +'<span>Generado por Prospeccion A2</span><span>'+esc(eA2.full)+' + '+esc(eOf.full)+' - '+fechaExp+'</span></div>'
+    +'</div>';
+  $("printArea").innerHTML=html;
+  var destino=(v.destinos&&v.destinos.length?v.destinos.join(" - "):(v.origen||v.ciudad||"viaje"));
+  var fname=("Viaje "+viajeNumero(v)+" - "+destino).replace(/[\\/:*?"<>|]+/g," ").replace(/\s+/g," ").trim();
+  var tituloPrevio=document.title;
+  document.title=fname;
+  var restaurar=function(){ document.title=tituloPrevio; window.removeEventListener("afterprint",restaurar); };
+  window.addEventListener("afterprint",restaurar);
+  setTimeout(function(){ window.print(); setTimeout(restaurar,1500); },40);
+}
+function reduceGastos(v){ return (v.gastos||[]).reduce(function(s,g){return s+(parseFloat(g.monto)||0);},0); }
+function estadoTexto(e){return e||"Planificado";}
+
+/* =================== EXPORT EXCEL =================== */
+function exportExcel(){
+  if(typeof XLSX==="undefined"){alert("Libreria Excel no cargada.");return;}
+  var wb=XLSX.utils.book_new();
+  var vs=viajesEmp().map(function(v){var vt=viajeViatico(v);return {Origen:v.origen||v.ciudad,Destinos:(v.destinos||[]).join(" / "),Provincia:v.provincia,Inicio:fmtDate(v.fecha_inicio),Fin:fmtDate(v.fecha_fin),Estado:v.estado,Integrantes:integNames(v.integrantes),Objetivo:v.objetivo,Km:v.km,Amortizacion:vt.amort,Gastos:vt.gastos,TotalViatico:vt.total,Adelanto:v.adelanto};});
+  var cs=contactosEmp().map(function(c){return {Empresa:empName(c.empresa||"a2"),Empresa_Estudio:c.empresa_estudio,Nombre:c.nombre,Apellido:c.apellido,Cargo:c.cargo,Profesion:c.profesion,WhatsApp:c.whatsapp,Email:c.email,Ciudad:c.ciudad,Provincia:c.provincia,Rubro:c.rubro,CUIT:c.cuit,Potencial:c.potencial,Etapa:c.etapa,Vendedor:vend(c.vendedor||ME).n,N_Presupuesto:c.n_presupuesto,Reunion:(c.reunion_inicio?c.reunion_inicio+(c.reunion_fin?"-"+c.reunion_fin:""):""),Reunion_Objetivo:c.reunion_objetivo,Reunion_Hablado:c.reunion_notas,Prox_contacto:fmtDate(c.prox_contacto)};});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(vs.length?vs:[{}]),"Viajes");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(cs.length?cs:[{}]),"Contactos");
+  XLSX.writeFile(wb,"prospeccion_a2_office_"+todayISO()+".xlsx");
+}
+
+/* Export dedicado para importar en la app de Seguimiento (ventas). Columnas fijas, keyeado por CUIT + ID. */
+function viajeDe(id){ var v=DB.viajes[id]; if(!v){return {t:"",f:""};} v._id=id; return {t:"Viaje "+viajeNumero(v)+" - "+viajeTitulo(v), f:fmtDate(v.fecha_inicio)}; }
+/* Mapea la etapa de prospeccion a las columnas del kanban de la pestana Prospeccion (app de ventas) */
+function columnaKanban(etapa){
+  var e=(etapa||"").toLowerCase();
+  if(e.indexOf("contact")>=0)return "Contactado";
+  if(e.indexOf("reunion")>=0)return "Reunion";
+  if(e.indexOf("presupuesto")>=0||e.indexOf("negociac")>=0||e.indexOf("oportun")>=0)return "Oportunidad";
+  if(e.indexOf("ganado")>=0)return "Oportunidad";
+  if(e.indexOf("perdido")>=0||e.indexOf("descart")>=0)return "Descartado";
+  return "Detectado";
+}
+function filaProspecto(c){
+  var vj=viajeDe(c.viaje_id||"");
+  var reunion=(c.reunion_inicio?c.reunion_inicio+(c.reunion_fin?"-"+c.reunion_fin:""):"");
+  return {
+    ID_Prospeccion:c._id||"",
+    CUIT:c.cuit||"",
+    Empresa_Destino:(c.empresa==="office"?"Office Amoblamientos":"Grupo A2"),
+    Empresa:c.empresa_estudio||"",
+    Nombre:c.nombre||"",
+    Apellido:c.apellido||"",
+    Cargo:c.cargo||"",
+    Profesion:c.profesion||"",
+    Telefono:c.whatsapp||"",
+    Email:c.email||"",
+    Direccion:c.direccion||"",
+    Ciudad:c.ciudad||"",
+    Provincia:c.provincia||"",
+    Rubro:c.rubro||"",
+    Potencial:c.potencial||"",
+    Columna:columnaKanban(c.etapa),
+    Etapa_Origen:c.etapa||"Prospecto",
+    N_Presupuesto:c.n_presupuesto||"",
+    Origen:vj.t,
+    Fecha_Viaje:vj.f,
+    Vendedor:vend(c.vendedor||ME).n,
+    Reunion:reunion,
+    Notas:c.reunion_notas||c.reunion_objetivo||c.observaciones||"",
+    Fecha_Export:todayISO()
+  };
+}
+function exportProspectosSeguimiento(){
+  if(typeof XLSX==="undefined"){alert("Libreria Excel no cargada.");return;}
+  var lista=contactosEmp().filter(function(c){ return (c.nombre||c.apellido||c.empresa_estudio); });
+  if(!lista.length){ alert("No hay prospectos cargados para exportar."); return; }
+  var rows=lista.map(filaProspecto);
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Prospectos");
+  XLSX.writeFile(wb,"prospectos_para_seguimiento_"+todayISO()+".xlsx");
+  alert("Listo. "+rows.length+" prospectos exportados.\n\nEste archivo lo va a importar la app de Seguimiento (ventas). El cruce lo hace el CUIT; los que todavia no tienen CUIT entran igual y se completan despues.");
+}
+
+/* =================== BACKUP / RESTAURACION =================== */
+function bajarArchivo(nombre, texto, tipo){
+  try{
+    var blob=new Blob([texto],{type:tipo||"application/json"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a"); a.href=url; a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},2000);
+    return true;
+  }catch(e){ console.error("Descarga fallida",e); return false; }
+}
+function backupData(){
+  return {app:"prospeccion_a2", formato:1, fecha:new Date().toISOString(),
+    viajes:DB.viajes||{}, contactos:DB.contactos||{}, localidades:DB.localidades||{}};
+}
+function backupJSON(silencioso){
+  var d=backupData();
+  var stamp=new Date().toISOString().slice(0,16).replace(/[:T]/g,"-");
+  var ok=bajarArchivo("backup_prospeccion_"+stamp+".json", JSON.stringify(d,null,2));
+  if(!silencioso){
+    if(ok)alert("Backup descargado.\n\nViajes: "+Object.keys(d.viajes).length+"\nContactos: "+Object.keys(d.contactos).length+"\nCiudades: "+Object.keys(d.localidades).length+"\n\nGuardalo en Drive o mandatelo por mail.");
+    else alert("No se pudo generar el archivo.");
+  }
+  return ok;
+}
+function restoreJSON(input){
+  var f=input && input.files && input.files[0];
+  input.value="";
+  if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    var d;
+    try{ d=JSON.parse(r.result); }catch(e){ alert("El archivo no es un JSON valido."); return; }
+    if(!d || typeof d!=="object" || (!d.viajes && !d.contactos && !d.localidades)){ alert("Este archivo no parece un backup de esta app."); return; }
+    var nv=Object.keys(d.viajes||{}).length, nc=Object.keys(d.contactos||{}).length, nl=Object.keys(d.localidades||{}).length;
+    var actual=Object.keys(DB.viajes||{}).length+" viajes y "+Object.keys(DB.contactos||{}).length+" contactos";
+    if(!confirm("Backup del "+((d.fecha||"").slice(0,10)||"?")+"\n\nContiene: "+nv+" viajes, "+nc+" contactos, "+nl+" ciudades.\n\nEsto REEMPLAZA lo que hay ahora ("+actual+") para todo el equipo.\n\nContinuar?")) return;
+    backupJSON(true); /* copia de lo actual, por las dudas */
+    var payload={viajes:d.viajes||{}, contactos:d.contactos||{}, localidades:d.localidades||{}};
+    if(fbRef){
+      fbRef.set(payload).then(function(){ alert("Restaurado. Ya lo ven todos."); })
+        .catch(function(e){ console.error(e); alert("Se restauro en este telefono, pero no se pudo escribir en la nube. Revisa la conexion (el punto de arriba)."); });
+    }else{
+      alert("Sin conexion a la nube: se restauro solo en este dispositivo.");
+    }
+    DB.viajes=payload.viajes; DB.contactos=payload.contactos; DB.localidades=payload.localidades;
+    renderAll();
+  };
+  r.onerror=function(){ alert("No se pudo leer el archivo."); };
+  r.readAsText(f);
+}
+
+/* =================== SHEET =================== */
+function openSheet(){ $("ovl").classList.add("open"); document.body.style.overflow="hidden"; }
+function closeSheet(){ $("ovl").classList.remove("open"); document.body.style.overflow=""; }
+$("ovl").addEventListener("click",function(e){ if(e.target===this)closeSheet(); });
+
+/* =================== CONFIGURACION =================== */
+var CFG_COLORS=["#1a6fbf","#d4537e","#185fa5","#7f5fdd","#1d9e75","#ba7517","#d85a30","#5f5e5a","#0f6e56","#2c7fb8","#b83280","#0891b2"];
+function ensureVend(){ if(!DB.config.vendedores)DB.config.vendedores=JSON.parse(JSON.stringify(VENDEDORES)); return DB.config.vendedores; }
+function ensureEmp(){ if(!DB.config.empresas)DB.config.empresas=JSON.parse(JSON.stringify(EMPRESAS)); return DB.config.empresas; }
+function ensureCats(){ if(!DB.config.categorias_gasto)DB.config.categorias_gasto=CAT_GASTO_DEFAULT.slice(); return DB.config.categorias_gasto; }
+function ensureEtapas(){ if(!DB.config.etapas)DB.config.etapas=ETAPAS.slice(); return DB.config.etapas; }
+function ensurePot(){ if(!DB.config.potencial)DB.config.potencial=POTENCIAL.slice(); return DB.config.potencial; }
+function cfgTitle(t){ return '<div style="font-size:12px;font-weight:700;color:var(--slate);letter-spacing:.03em;margin:18px 0 7px">'+esc(t)+'</div>'; }
+function cfgRow(inner){ return '<div style="display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px">'+inner+'</div>'; }
+function miniBtn(fn,ic){ return '<button class="closeb sm" style="width:30px;height:30px;font-size:14px;flex:none" onclick="'+fn+'">'+ic+'</button>'; }
+
+function renderConfig(){
+  var box=$("configBody"); if(!box)return;
+  var h="";
+
+  /* Personas que viajan */
+  h+='<div class="card">'+cfgTitle("PERSONAS QUE VIAJAN");
+  h+=vendList().map(function(v){
+    return cfgRow('<span class="dot" style="background:'+esc(v.c||"#5a7488")+';width:15px;height:15px"></span>'
+      +'<span style="flex:1">'+esc(v.n)+'</span>'
+      +miniBtn("cfgColorVend('"+v.id+"')","&#127912;")
+      +miniBtn("cfgRenVend('"+v.id+"')","&#9998;")
+      +miniBtn("cfgDelVend('"+v.id+"')","&times;"));
+  }).join("");
+  h+='<button class="btn ghost sm" style="margin-top:9px" onclick="cfgAddVend()">+ Agregar persona</button></div>';
+
+  /* Tipos de gasto */
+  h+='<div class="card" style="margin-top:12px">'+cfgTitle("TIPOS DE GASTO");
+  h+=catGasto().map(function(c,i){
+    return cfgRow('<span style="flex:1">'+esc(c)+'</span>'
+      +miniBtn("cfgRenCat("+i+")","&#9998;")
+      +miniBtn("cfgDelCat("+i+")","&times;"));
+  }).join("");
+  h+='<button class="btn ghost sm" style="margin-top:9px" onclick="cfgAddCat()">+ Agregar tipo de gasto</button></div>';
+
+  /* Precio por km */
+  h+='<div class="card" style="margin-top:12px">'+cfgTitle("PRECIO POR KILOMETRO");
+  h+=cfgRow('<span style="flex:1">Valor por defecto para viajes nuevos</span>'
+    +'<b style="color:var(--blue);margin-right:4px">'+money(cfgKmRate())+'</b>'+miniBtn("cfgKm()","&#9998;"));
+  h+='</div>';
+
+  /* Ciudades */
+  h+='<div class="card" style="margin-top:12px">'+cfgTitle("CIUDADES");
+  h+=cfgRow('<span style="flex:1">Localidades del equipo ('+Object.keys(DB.localidades||{}).length+')</span>'
+    +'<button class="btn ghost sm" onclick="openCiudades()">Abrir</button>');
+  h+='</div>';
+
+  /* Empresas */
+  h+='<div class="card" style="margin-top:12px">'+cfgTitle("EMPRESAS DEL GRUPO");
+  h+=empList().map(function(e){
+    return cfgRow('<div style="flex:1"><div style="font-weight:600">'+esc(e.n)+'</div><div style="font-size:11px;color:var(--slate)">'+esc(e.full||"")+'</div></div>'
+      +miniBtn("cfgRenEmp('"+e.id+"')","&#9998;"));
+  }).join("");
+  h+='<div class="sub" style="margin-top:7px">Se edita el nombre que sale en el membrete. El cruce con ventas no se toca.</div></div>';
+
+  /* Etapas */
+  h+='<div class="card" style="margin-top:12px">'+cfgTitle("ETAPAS DEL PIPELINE");
+  h+=etapaList().map(function(e,i){
+    return cfgRow('<span style="flex:1">'+esc(e)+'</span>'+miniBtn("cfgRenEtapa("+i+")","&#9998;")+miniBtn("cfgDelEtapa("+i+")","&times;"));
+  }).join("");
+  h+='<button class="btn ghost sm" style="margin-top:9px" onclick="cfgAddEtapa()">+ Agregar etapa</button></div>';
+
+  /* Potencial */
+  h+='<div class="card" style="margin-top:12px">'+cfgTitle("NIVELES DE POTENCIAL");
+  h+=potList().map(function(p,i){
+    return cfgRow('<span style="flex:1">'+esc(p)+'</span>'+miniBtn("cfgRenPot("+i+")","&#9998;")+miniBtn("cfgDelPot("+i+")","&times;"));
+  }).join("");
+  h+='<button class="btn ghost sm" style="margin-top:9px" onclick="cfgAddPot()">+ Agregar nivel</button></div>';
+
+  box.innerHTML=h;
+}
+
+/* --- Personas --- */
+function cfgAddVend(){
+  var n=prompt("Nombre de la persona:"); if(n===null)return; n=n.trim(); if(!n)return;
+  var list=ensureVend(); var id=n.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,10)+uid().slice(-3);
+  list.push({id:id,n:n,c:CFG_COLORS[list.length%CFG_COLORS.length]});
+  saveCfg(); renderConfig();
+}
+function cfgRenVend(id){ var list=ensureVend(); for(var i=0;i<list.length;i++){ if(list[i].id===id){ var n=prompt("Nombre:",list[i].n); if(n===null)return; n=n.trim(); if(n){list[i].n=n;saveCfg();renderConfig();} return; } } }
+function cfgColorVend(id){ var list=ensureVend(); for(var i=0;i<list.length;i++){ if(list[i].id===id){ var c=prompt("Color en formato #rrggbb:",list[i].c||"#1a6fbf"); if(c===null)return; c=c.trim(); if(/^#[0-9a-fA-F]{6}$/.test(c)){list[i].c=c;saveCfg();renderConfig();}else alert("Formato invalido. Ej: #1a6fbf"); return; } } }
+function cfgDelVend(id){ var list=ensureVend(); for(var i=0;i<list.length;i++){ if(list[i].id===id){ if(confirm("Quitar a "+list[i].n+"? Los viajes que ya la tienen la siguen mostrando.")){ list.splice(i,1); saveCfg(); renderConfig(); } return; } } }
+
+/* --- Tipos de gasto --- */
+function cfgAddCat(){ var n=prompt("Nuevo tipo de gasto:"); if(n===null)return; n=n.trim(); if(!n)return; var l=ensureCats(); if(l.indexOf(n)>=0){alert("Ya existe.");return;} l.push(n); saveCfg(); renderConfig(); }
+function cfgRenCat(i){ var l=ensureCats(); var n=prompt("Tipo de gasto:",l[i]); if(n===null)return; n=n.trim(); if(n){l[i]=n;saveCfg();renderConfig();} }
+function cfgDelCat(i){ var l=ensureCats(); if(l.length<=1){alert("Tiene que quedar al menos uno.");return;} if(confirm("Borrar '"+l[i]+"'?")){ l.splice(i,1); saveCfg(); renderConfig(); } }
+
+/* --- Precio km --- */
+function cfgKm(){ var r=prompt("Precio por kilometro (solo numero):",cfgKmRate()); if(r===null)return; r=parseFloat((""+r).replace(",",".")); if(!isNaN(r)&&r>0){ DB.config.km_rate=r; saveCfg(); renderConfig(); } else alert("Numero invalido."); }
+
+/* --- Empresas --- */
+function cfgRenEmp(id){ var list=ensureEmp(); for(var i=0;i<list.length;i++){ if(list[i].id===id){
+  var n=prompt("Nombre corto (membrete):",list[i].n); if(n===null)return;
+  var f=prompt("Nombre completo:",list[i].full||list[i].n); if(f===null)return;
+  list[i].n=n.trim()||list[i].n; list[i].full=f.trim()||list[i].full; saveCfg(); renderConfig(); return; } } }
+
+/* --- Etapas --- */
+function cfgAddEtapa(){ var n=prompt("Nueva etapa:"); if(n===null)return; n=n.trim(); if(!n)return; var l=ensureEtapas(); if(l.indexOf(n)>=0){alert("Ya existe.");return;} l.push(n); saveCfg(); renderConfig(); }
+function cfgRenEtapa(i){ var l=ensureEtapas(); var n=prompt("Etapa:",l[i]); if(n===null)return; n=n.trim(); if(n){l[i]=n;saveCfg();renderConfig();} }
+function cfgDelEtapa(i){ var l=ensureEtapas(); if(l.length<=1){alert("Tiene que quedar al menos una.");return;} if(confirm("Borrar la etapa '"+l[i]+"'? Los contactos que la tengan la conservan.")){ l.splice(i,1); saveCfg(); renderConfig(); } }
+
+/* --- Potencial --- */
+function cfgAddPot(){ var n=prompt("Nuevo nivel de potencial:"); if(n===null)return; n=n.trim(); if(!n)return; var l=ensurePot(); if(l.indexOf(n)>=0){alert("Ya existe.");return;} l.push(n); saveCfg(); renderConfig(); }
+function cfgRenPot(i){ var l=ensurePot(); var n=prompt("Nivel:",l[i]); if(n===null)return; n=n.trim(); if(n){l[i]=n;saveCfg();renderConfig();} }
+function cfgDelPot(i){ var l=ensurePot(); if(l.length<=1){alert("Tiene que quedar al menos uno.");return;} if(confirm("Borrar '"+l[i]+"'?")){ l.splice(i,1); saveCfg(); renderConfig(); } }
+
+/* =================== INIT =================== */
+function boot(){
+  var t=localStorage.getItem("pa2_theme"); if(t)document.documentElement.setAttribute("data-theme",t);
+  $("fab").style.display="none";
+  initFirebase();
+  renderAll();
+}
+boot();
+</script>
+</body>
+</html>
